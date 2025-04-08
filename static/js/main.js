@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
         emailInput.addEventListener('input', function () {
             const email = this.value.trim();
             const parent = this.closest('.form-group');
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
 
             if (!emailRegex.test(email)) {
                 parent.classList.add('is-invalid');
@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Validate email
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
             if (!emailRegex.test(email)) {
                 document.getElementById('email').closest('.form-group').classList.add('is-invalid');
                 document.getElementById('email-message').textContent = 'Please enter a valid email address';
