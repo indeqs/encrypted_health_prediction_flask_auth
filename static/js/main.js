@@ -61,6 +61,38 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Phone number validation (Kenyan)
+    const phoneInput = document.getElementById('phone_number');
+    if (phoneInput) {
+        const phoneMessage = document.getElementById('phone-message');
+
+        phoneInput.addEventListener('input', function () {
+            const phone = this.value.trim();
+            const parent = this.closest('.form-group');
+
+            // Format validation for Kenyan numbers
+            // Accepts +254XXXXXXXXX, 254XXXXXXXXX, 07XXXXXXXX, or 7XXXXXXXX
+            const validFormats = [
+                /^\+254[17]\d{8}$/, // +254 format
+                /^254[17]\d{8}$/,   // 254 format without +
+                /^07[0-9]{8}$/,     // 07XXXXXXXX format
+                /^7[0-9]{8}$/       // 7XXXXXXXX format
+            ];
+
+            // Check if the phone number matches any valid format
+            const isValid = validFormats.some((regex) => regex.test(phone));
+
+            if (!isValid) {
+                parent.classList.add('is-invalid');
+                parent.classList.remove('is-valid');
+                phoneMessage.textContent = 'Please enter a valid Kenyan phone number (e.g., +254712345678, 0712345678)';
+            } else {
+                parent.classList.remove('is-invalid');
+                parent.classList.add('is-valid');
+                phoneMessage.textContent = '';
+            }
+        });
+    }
     // Email validation
     const emailInput = document.getElementById('email');
     if (emailInput) {
