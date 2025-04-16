@@ -1,50 +1,57 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Verify Phone - FHE Health Prediction{% endblock %}
+{% block title %}Verify Email - Sentiment Analysis System{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="auth-header">
-        <h1>FHE Health Prediction</h1>
-        <p>Secure health predictions using Fully Homomorphic Encryption</p>
-    </div>
-
-    <div class="auth-card">
-        <h2>Verify Your Phone</h2>
-        <p class="verification-message">We've sent a 6-digit verification code to <strong>{{ phone_number }}</strong>.
-            Please enter it below to verify your phone number.</p>
-
-        <form method="POST" action="{{ url_for('verify') }}">
-            <div class="form-group">
-                <label for="verification_code">Verification Code</label>
-                <div class="input-with-icon">
-                    <input type="text" id="verification_code" name="verification_code" required minlength="6"
-                        maxlength="6" pattern="[0-9]{6}" inputmode="numeric">
-                    <div class="input-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                    </div>
-                </div>
-                <p class="validation-message" id="code-message"></p>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Verify Your Email</h3>
             </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> A verification code has been sent to <strong>{{ email }}</strong>
+                </div>
 
-            <button type="submit" class="btn-primary">
-                <span>Verify</span>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 12h14"></path>
-                    <path d="M12 5l7 7-7 7"></path>
-                </svg>
-            </button>
-        </form>
+                <form action="{{ url_for('verify') }}" method="post">
+                    <div class="mb-3">
+                        <label for="verification_code" class="form-label">Verification Code</label>
+                        <input type="text" class="form-control form-control-lg text-center" id="verification_code"
+                            name="verification_code" placeholder="Enter 6-digit code" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mb-3">Verify Email</button>
+                </form>
 
-        <div class="auth-footer verification-footer">
-            <p>Didn't receive the code? <a href="{{ url_for('resend_code') }}">Resend Code</a></p>
-            <p>Want to use a different number? <a href="{{ url_for('signup') }}">Go back to sign up</a></p>
+                <div class="text-center">
+                    <p>Didn't receive the code?</p>
+                    <form action="{{ url_for('resend_code') }}" method="post">
+                        <button type="submit" class="btn btn-outline-secondary">
+                            <i class="fas fa-redo"></i> Resend Code
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Focus on the verification code input
+        document.getElementById('verification_code').focus();
+
+        // Auto-submit when 6 digits are entered
+        document.getElementById('verification_code').addEventListener('input', function (e) {
+            if (this.value.length === 6) {
+                // Slight delay to give user visual feedback before submitting
+                setTimeout(() => {
+                    this.form.submit();
+                }, 300);
+            }
+        });
+    });
+</script>
 {% endblock %}
