@@ -195,11 +195,14 @@ document.addEventListener('DOMContentLoaded', function () {
         // Create message element
         const messageElement = document.createElement('div');
         messageElement.className = `flash-message ${type}`;
-        messageElement.textContent = message;
+
+        // Create content wrapper for the message text
+        const contentWrapper = document.createElement('span');
+        contentWrapper.className = 'flash-content';
+        contentWrapper.textContent = message;
 
         // Add icon based on message type
         const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        iconSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
         iconSvg.setAttribute('viewBox', '0 0 24 24');
         iconSvg.setAttribute('fill', 'none');
         iconSvg.setAttribute('stroke', 'currentColor');
@@ -210,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let iconPath;
 
         if (type === 'success') {
-            iconPath = '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>';
+            iconPath = '<polyline points="20 6 9 17 4 12"></polyline>';
         } else if (type === 'error') {
             iconPath = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>';
         } else {
@@ -219,21 +222,44 @@ document.addEventListener('DOMContentLoaded', function () {
 
         iconSvg.innerHTML = iconPath;
 
-        // Insert icon before message text
-        messageElement.insertBefore(iconSvg, messageElement.firstChild);
+        // Create close button
+        const closeBtn = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        closeBtn.setAttribute('viewBox', '0 0 24 24');
+        closeBtn.setAttribute('fill', 'none');
+        closeBtn.setAttribute('stroke', 'currentColor');
+        closeBtn.setAttribute('stroke-width', '2');
+        closeBtn.setAttribute('stroke-linecap', 'round');
+        closeBtn.setAttribute('stroke-linejoin', 'round');
+        closeBtn.setAttribute('class', 'close-btn');
+        closeBtn.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
+
+        // Close button click handler
+        closeBtn.addEventListener('click', () => {
+            messageElement.style.opacity = '0';
+            setTimeout(() => {
+                if (flashContainer.contains(messageElement)) {
+                    flashContainer.removeChild(messageElement);
+                }
+            }, 300);
+        });
+
+        // Append elements in the correct order (icon, message, close button)
+        messageElement.appendChild(iconSvg);
+        messageElement.appendChild(contentWrapper);
+        messageElement.appendChild(closeBtn);
 
         // Add message to container
         flashContainer.appendChild(messageElement);
 
-        // Auto-dismiss after 5 seconds
+        // Auto-dismiss after 4 seconds
         setTimeout(() => {
             messageElement.style.opacity = '0';
             setTimeout(() => {
                 if (flashContainer.contains(messageElement)) {
                     flashContainer.removeChild(messageElement);
                 }
-            }, 500);
-        }, 5000);
+            }, 300);
+        }, 4000);
     }
 
     // Alternative OTP input visualization (optional enhancement)

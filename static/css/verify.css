@@ -230,3 +230,83 @@
     text-align: center;
     margin-top: 8px;
 }
+
+/* Compact Flash Messages - Add to verify.css */
+.flash-messages {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    max-width: 320px;
+    z-index: 1000;
+}
+
+.flash-message {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.flash-message.success {
+    background-color: #e6f4ea;
+    border-left: 4px solid #34a853;
+    color: #1e8e3e;
+}
+
+.flash-message.error {
+    background-color: #fce8e6;
+    border-left: 4px solid #ea4335;
+    color: #c53929;
+}
+
+.flash-message.info {
+    background-color: #e8f0fe;
+    border-left: 4px solid #4285f4;
+    color: #1a73e8;
+}
+
+.flash-message svg {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+/* Add a close button */
+.flash-message .close-btn {
+    margin-left: auto;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.flash-message .close-btn:hover {
+    opacity: 1;
+}
+
+/* Responsive design for small screens */
+@media (max-width: 576px) {
+    .flash-messages {
+        left: 16px;
+        right: 16px;
+        max-width: none;
+    }
+}
