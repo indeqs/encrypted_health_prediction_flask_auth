@@ -1,57 +1,128 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en">
 
-{% block title %}Verify Email - Sentiment Analysis System{% endblock %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - Health Prediction System</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
 
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h3 class="mb-0">Verify Your Email</h3>
+<body>
+    <div class="container">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1>Sentiment Analysis System</h1>
+                <p>Secure your account by verifying your email</p>
             </div>
-            <div class="card-body">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> A verification code has been sent to <strong>{{ email }}</strong>
+
+            <div class="flash-messages" id="flash-messages">
+                <!-- Flash messages will appear here -->
+            </div>
+
+            <div class="auth-card">
+                <h2>Verify Your Email</h2>
+
+                <div class="flash-message info">
+                    A verification code has been sent to <strong>{{email}}</strong>
                 </div>
 
-                <form action="{{ url_for('verify') }}" method="post">
-                    <div class="mb-3">
-                        <label for="verification_code" class="form-label">Verification Code</label>
-                        <input type="text" class="form-control form-control-lg text-center" id="verification_code"
-                            name="verification_code" placeholder="Enter 6-digit code" required>
+                <form action="/verify" method="post" id="verification-form">
+                    <div class="form-group">
+                        <label for="verification_code">Verification Code</label>
+                        <div class="input-with-icon">
+                            <div class="input-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                            </div>
+                            <input type="text" id="verification_code" name="verification_code"
+                                placeholder="Enter 6-digit code" required maxlength="6" pattern="[0-9]{6}"
+                                autocomplete="one-time-code" inputmode="numeric">
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 mb-3">Verify Email</button>
+
+                    <button type="submit" class="btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        Verify Email
+                    </button>
                 </form>
 
-                <div class="text-center">
-                    <p>Didn't receive the code?</p>
-                    <form action="{{ url_for('resend_code') }}" method="post">
-                        <button type="submit" class="btn btn-outline-secondary">
-                            <i class="fas fa-redo"></i> Resend Code
-                        </button>
-                    </form>
+                <div class="auth-divider">
+                    <span>OR</span>
                 </div>
+
+                <form action="/resend_code" method="post">
+                    <button type="submit" class="btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"></path>
+                        </svg>
+                        Resend Verification Code
+                    </button>
+                </form>
+            </div>
+
+            <div class="auth-footer">
+                <p>Need help? <a href="/contact">Contact Support</a></p>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Focus on the verification code input
-        document.getElementById('verification_code').focus();
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Focus on the verification code input
+            const codeInput = document.getElementById('verification_code');
+            codeInput.focus();
 
-        // Auto-submit when 6 digits are entered
-        document.getElementById('verification_code').addEventListener('input', function (e) {
-            if (this.value.length === 6) {
-                // Slight delay to give user visual feedback before submitting
+            // Add visual feedback when typing
+            codeInput.addEventListener('input', function () {
+                // Remove non-numeric characters
+                this.value = this.value.replace(/[^0-9]/g, '');
+
+                if (this.value.length === 6) {
+                    // Add visual feedback before submitting
+                    this.classList.add('is-valid');
+
+                    // Slight delay to show the validation styling
+                    setTimeout(() => {
+                        document.getElementById('verification-form').submit();
+                    }, 300);
+                } else {
+                    this.classList.remove('is-valid');
+                }
+            });
+
+            // Display flash messages (if any)
+            function showFlashMessage(type, message) {
+                const flashContainer = document.getElementById('flash-messages');
+                const messageElement = document.createElement('div');
+                messageElement.className = `flash-message ${type}`;
+                messageElement.textContent = message;
+
+                flashContainer.appendChild(messageElement);
+
+                // Auto-dismiss after 5 seconds
                 setTimeout(() => {
-                    this.form.submit();
-                }, 300);
+                    messageElement.style.opacity = '0';
+                    setTimeout(() => {
+                        flashContainer.removeChild(messageElement);
+                    }, 500);
+                }, 5000);
             }
+
+            // Example: Uncomment to test flash messages
+            // showFlashMessage('info', 'Please check your email for the verification code');
         });
-    });
-</script>
-{% endblock %}
+    </script>
+</body>
+
+</html>
