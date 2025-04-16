@@ -1,0 +1,192 @@
+/* Verification specific styles */
+.verification-info {
+    background-color: rgba(33, 150, 243, 0.1);
+    border: 1px solid var(--info-color);
+    color: var(--text-color);
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.email-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(33, 150, 243, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.email-icon svg {
+    width: 20px;
+    height: 20px;
+    color: var(--info-color);
+}
+
+.verification-info p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+/* OTP input styling */
+#verification_code {
+    font-size: 20px;
+    text-align: center;
+    letter-spacing: 4px;
+    font-weight: 600;
+}
+
+/* Countdown timer styling */
+.countdown-container {
+    text-align: center;
+    margin: 16px 0;
+}
+
+.countdown-text {
+    color: var(--secondary-text);
+    font-size: 14px;
+}
+
+#countdown {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Action buttons styling */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+#resend-button {
+    width: 100%;
+}
+
+.btn-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-link:hover {
+    background-color: var(--hover-bg);
+    border-radius: 6px;
+}
+
+.btn-link svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Animation for verification success */
+@keyframes successPulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.verification-success {
+    animation: successPulse 0.5s ease;
+}
+
+/* Disable button styling */
+.btn-disabled {
+    background-color: #cccccc !important;
+    cursor: not-allowed !important;
+    opacity: 0.7;
+}
+
+/* Responsive styles */
+@media (max-width: 576px) {
+    .verification-info {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    #verification_code {
+        font-size: 18px;
+        letter-spacing: 2px;
+    }
+}
+
+/* Loading state for buttons */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-top: -10px;
+    margin-left: -10px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* OTP digit keyboard display visualization */
+.otp-digits {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.otp-digit {
+    width: 40px;
+    height: 50px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 600;
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+.otp-digit.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--input-focus-shadow);
+}
+
+.otp-digit.filled {
+    border-color: var(--primary-color);
+    background-color: var(--primary-light);
+}
