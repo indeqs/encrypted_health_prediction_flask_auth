@@ -72,21 +72,26 @@
                     </button>
                 </form>
 
+                <!-- Replace the current action-buttons div with this code -->
                 <div class="auth-divider">
                     <span>OR</span>
                 </div>
 
-                <div class="action-buttons">
+                <div class="resend-section">
+                    <p>Didn't receive the code?</p>
                     <form action="/resend_code" method="post" id="resend-form">
                         <input type="hidden" name="email" id="resend-email" value="{{email}}">
-                        <button type="submit" class="btn-secondary" id="resend-button">
+                        <button type="submit" class="btn-compact" id="resend-button">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"></path>
                             </svg>
-                            Resend Verification Code
+                            Resend Code
                         </button>
                     </form>
+                </div>
+
+                <div class="back-section">
                     <a href="/login" class="btn-link">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -95,15 +100,14 @@
                         Back to Login
                     </a>
                 </div>
-            </div>
 
-            <div class="auth-footer">
-                <p>Need help? <a href="/contact">Contact Support</a></p>
+                <div class="auth-footer">
+                    <p>Need help? <a href="/contact">Contact Support</a></p>
+                </div>
             </div>
         </div>
-    </div>
 
-    <script src="/static/js/verify.js"></script>
+        <script src="/static/js/verify.js"></script>
 </body>
 
 </html>
