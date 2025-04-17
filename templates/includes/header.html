@@ -1,0 +1,20 @@
+<header class="site-header">
+    <div class="header-container">
+        <div class="logo">
+            <a href="{{ url_for('home') }}">
+                <span class="logo-text">FHE Health</span>
+            </a>
+        </div>
+        <nav class="main-nav">
+            <ul>
+                <li><a href="{{ url_for('home') }}">Home</a></li>
+                
+                <li><a href="{{ url_for('contact') }}" class="active">Contact</a></li>
+            </ul>
+        </nav>
+        <div class="nav-buttons">
+            <a href="{{ url_for('login') }}" class="btn-secondary">Log In</a>
+            <a href="{{ url_for('signup') }}" class="btn-primary">Sign Up</a>
+        </div>
+    </div>
+</header>

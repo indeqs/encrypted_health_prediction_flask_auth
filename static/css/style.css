@@ -1373,24 +1373,46 @@ body {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
+/* --- REVISED --- */
 .contact-grid {
     display: grid;
     grid-template-columns: 1fr 1.5fr;
+    /* This was already correct, keeping revised version */
     gap: 30px;
     margin-bottom: 60px;
 }
 
+/* --- REVISED --- */
 .contact-info-card {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+    /* Changed from 1fr 1fr */
     gap: 20px;
 }
 
+/* --- ADDED --- */
+@media (min-width: 768px) {
+    .contact-info-card {
+        grid-template-columns: 1fr 1fr;
+        /* Revert to 2 columns on larger screens */
+    }
+}
+
+/* --- REVISED --- */
 .contact-section {
     background-color: var(--background-color);
-    padding: 20px;
+    padding: 25px;
+    /* Increased from 20px */
     border-radius: 8px;
     height: 100%;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    /* Added transition */
+}
+
+/* --- ADDED --- */
+.contact-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
 }
 
 .contact-icon {
@@ -1401,7 +1423,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    /* --- REVISED --- Increased from 15px */
 }
 
 .contact-icon svg {
@@ -1413,14 +1436,16 @@ body {
 .contact-section h3 {
     font-size: 18px;
     font-weight: 500;
-    margin-bottom: 12px;
+    margin-bottom: 15px;
+    /* --- REVISED --- Increased from 12px */
     color: var(--text-color);
 }
 
 .contact-section p {
     font-size: 14px;
     color: var(--secondary-text);
-    margin-bottom: 12px;
+    margin-bottom: 15px;
+    /* --- REVISED --- Increased from 12px */
     line-height: 1.5;
 }
 
@@ -1442,7 +1467,8 @@ body {
 
 .contact-form-card {
     background-color: var(--primary-light);
-    padding: 30px;
+    padding: 35px;
+    /* --- REVISED --- Increased from 30px */
     border-radius: 8px;
 }
 
@@ -1461,7 +1487,8 @@ body {
 
 .contact-form {
     display: grid;
-    gap: 20px;
+    gap: 25px;
+    /* --- REVISED --- Increased from 20px */
 }
 
 .contact-form .form-group textarea {
@@ -1569,11 +1596,154 @@ body {
 }
 
 @media (max-width: 600px) {
-    .contact-info-card {
-        grid-template-columns: 1fr;
-    }
+    /* Contact-info-card already defaults to 1 column, so no specific change needed here */
+    /* .contact-info-card { */
+    /*    grid-template-columns: 1fr; */
+    /* Already default now */
+    /* } */
 
     .legal-toc {
         padding: 15px;
     }
 }
+
+
+/* Header Styles */
+.site-header {
+    background-color: var(--card-background);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+}
+
+.logo a {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+.logo-text {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-left: 8px;
+}
+
+.main-nav ul {
+    display: flex;
+    list-style: none;
+    gap: 25px;
+}
+
+.main-nav a {
+    color: var(--text-color);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 15px;
+    padding: 8px 0;
+    position: relative;
+    transition: color 0.2s;
+}
+
+.main-nav a:hover {
+    color: var(--primary-color);
+}
+
+.main-nav a.active {
+    color: var(--primary-color);
+}
+
+.main-nav a.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--primary-color);
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.nav-buttons .btn-secondary {
+    padding: 8px 16px;
+}
+
+.nav-buttons .btn-primary {
+    padding: 8px 16px;
+}
+
+/* Mobile Navigation */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.mobile-menu-toggle svg {
+    width: 24px;
+    height: 24px;
+    color: var(--text-color);
+}
+
+@media (max-width: 900px) {
+
+    /* Added header specific mobile styles here, keeping contact one separate */
+    .main-nav,
+    .nav-buttons {
+        display: none;
+    }
+
+    .mobile-menu-toggle {
+        display: block;
+    }
+
+    .mobile-menu-active .main-nav {
+        display: block;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: var(--card-background);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        padding: 15px 0;
+    }
+
+    .mobile-menu-active .main-nav ul {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .mobile-menu-active .main-nav a {
+        display: block;
+        padding: 12px 20px;
+    }
+
+    .mobile-menu-active .nav-buttons {
+        display: flex;
+        flex-direction: column;
+        padding: 15px 20px;
+    }
+}
+
+/* --- END OF FILE --- */

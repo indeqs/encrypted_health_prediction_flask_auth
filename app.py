@@ -803,6 +803,95 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/contact", methods=['GET', 'POST']) # <--- Add methods=['GET', 'POST']
+def contact():
+    """Renders the contact page and handles form submission."""
+    if request.method == 'POST':
+        # --- Process the Form Data ---
+        name = request.form.get('name')     # Get data using the 'name' attribute from your form input fields
+        email = request.form.get('email')
+        subject = request.form.get('subject', 'Contact Form Submission') # Optional subject with default
+        message = request.form.get('message')
+
+        # --- Basic Server-Side Validation ---
+        if not name or not email or not message:
+            flash('Please fill out all required fields (Name, Email, Message).', 'danger')
+            # Re-render the form, potentially passing back entered values to repopulate
+            return render_template("contact.html", form_name=name, form_email=email, form_subject=subject, form_message=message)
+
+        # --- Attempt to Send Email (Replace with your actual logic) ---
+        try:
+            # Example: Construct email body
+            email_body = f"""
+            New contact form submission:
+            Name: {name}
+            Email: {email}
+            Subject: {subject}
+
+            Message:
+            {message}
+            """
+            # Replace 'your_admin_email@example.com' with where you want emails sent
+            admin_email = os.getenv('ADMIN_CONTACT_EMAIL', 'admin@app.com') # Use env var or default
+
+            # Assuming your send_email function takes (recipient, subject, body)
+            if send_email(admin_email, f"Website Contact: {subject}", email_body):
+                 app.logger.info(f"Contact form submitted successfully by {email}")
+                 flash('Thank you for your message! We will get back to you soon.', 'success')
+            else:
+                 app.logger.error(f"Failed to send contact form email from {email}")
+                 flash('Sorry, there was an error sending your message. Please try again later or contact us directly.', 'danger')
+
+        except Exception as e:
+            app.logger.error(f"Error processing contact form from {email}: {e}")
+            flash('An unexpected error occurred. Please try again.', 'danger')
+
+        # Redirect after POST to prevent form resubmission on refresh (Post-Redirect-Get Pattern)
+        return redirect(url_for('contact')) # Redirects back to the contact page (GET request)
+
+    # --- Handle GET Request (Display the form) ---
+    # This part runs if request.method is 'GET'
+    return render_template("contact.html")
+
+
+
+@app.route("/terms-of-service")
+def terms_of_service():
+    """Renders the terms of service page."""
+    return render_template("tos.html")
+
+
+@app.route("/privacy-policy")
+def privacy_policy():
+    """Renders the privacy policy page."""
+    return render_template("policy.html")
+
+
+# Add this within your app.py, for example, after the other static page routes
+
+
+@app.route(
+    "/subscribe", methods=["POST"]
+)  # Needs methods=['POST'] because the form uses method="post"
+def subscribe():
+    """Handles newsletter subscription form (placeholder)."""
+    email = request.form.get("email")
+    if email:
+        # In a real application, add logic here:
+        # 1. Validate the email format more robustly.
+        # 2. Store the email address in a database or send it to a mailing list service.
+        # 3. Handle potential errors during storage.
+        app.logger.info(f"Newsletter subscription attempt: {email}")
+        flash("Thank you for subscribing!", "success")
+    else:
+        flash("Please provide a valid email address.", "warning")
+
+    # Redirect back to the page the user came from, or to the home page.
+    # Using request.referrer can be unreliable/insecure, redirecting home is safer.
+    # Make sure you have the 'index' route defined correctly (or use 'home' if you kept that name)
+    return redirect(url_for("terms_of_service"))
+
+
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)  # Use INFO or DEBUG

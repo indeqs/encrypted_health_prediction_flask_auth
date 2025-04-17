@@ -18,7 +18,9 @@
             </div>
         </div>
         <div class="hero-image">
-            <img src="../static/img/secure_health_data_illustration.jpg" alt="Secure health data illustration">
+            <img src="{{ url_for('static', filename='img/secure_health_data_illustration.jpg') }}"
+                alt="Secure health data illustration">
+
         </div>
     </section>
 
@@ -143,7 +145,8 @@
             </div>
         </div>
         <div class="tech-image">
-            <img src="../static/img/healthcare_prediction.jpg" alt="FHE Technology Illustration">
+            <img src="{{ url_for('static', filename='img/healthcare_prediction.jpg') }}"
+                alt="FHE Technology Illustration">
         </div>
     </section>
 

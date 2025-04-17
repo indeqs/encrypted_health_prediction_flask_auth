@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', function () {
+    const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+
+    if (mobileMenuToggle) {
+        mobileMenuToggle.addEventListener('click', function () {
+            document.body.classList.toggle('mobile-menu-active');
+        });
+    }
     if (!window.location.pathname.includes('/verify')) {
         // Auto-hide flash messages after 5 seconds
         const flashMessages = document.querySelectorAll('.flash-message');
