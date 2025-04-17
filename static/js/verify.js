@@ -144,23 +144,134 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Handle resend code form submission - let server handle everything
+    // Handle resend code form submission with AJAX
     if (resendForm) {
         resendForm.addEventListener('submit', function (e) {
-            // Show loading state on button during form submission
+            e.preventDefault(); // Prevent the default form submission
+
+            // Show loading state on button
             const resendButton = document.getElementById('resend-button');
             resendButton.classList.add('btn-loading');
+            resendButton.disabled = true;
 
-            // Ensure the action URL is correct
-            resendForm.action = "/resend-code";  // Make sure this matches the app.py route
+            // Get the email value
+            const email = document.getElementById('resend-email').value;
 
-            // Let the form submit normally - server will handle resending and flashing messages
+            // Create a FormData object
+            const formData = new FormData();
+            formData.append('email', email);
+
+            // Send AJAX request
+            fetch('/resend-code', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Reset button state
+                    resendButton.classList.remove('btn-loading');
+                    resendButton.disabled = false;
+
+                    // Create flash message based on the response
+                    const flashContainer = document.getElementById('flash-messages');
+                    const messageElement = document.createElement('div');
+
+                    if (data.success) {
+                        messageElement.className = 'flash-message success';
+                        messageElement.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span class="flash-content">${data.message}</span>
+                        <svg class="close-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    `;
+
+                        // Reset the verification code input
+                        if (codeInput) {
+                            codeInput.value = '';
+                            codeInput.disabled = false;
+                            codeInput.focus();
+                        }
+
+                        // Reset the verify button
+                        const verifyButton = document.getElementById('verify-button');
+                        if (verifyButton) {
+                            verifyButton.disabled = false;
+                            verifyButton.classList.remove('btn-disabled');
+                        }
+
+                        // Restart the countdown
+                        startCountdown();
+
+                    } else {
+                        messageElement.className = 'flash-message error';
+                        messageElement.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span class="flash-content">${data.message}</span>
+                        <svg class="close-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    `;
+                    }
+
+                    flashContainer.appendChild(messageElement);
+                    addFlashMessageHandlers(messageElement);
+                })
+                .catch(error => {
+                    // Reset button state
+                    resendButton.classList.remove('btn-loading');
+                    resendButton.disabled = false;
+
+                    // Create error flash message
+                    const flashContainer = document.getElementById('flash-messages');
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'flash-message error';
+                    messageElement.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span class="flash-content">Error resending code. Please try again.</span>
+                    <svg class="close-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                `;
+
+                    flashContainer.appendChild(messageElement);
+                    addFlashMessageHandlers(messageElement);
+                });
         });
     }
 
     // Check if we have server-side flash messages to display
     const serverFlashMessages = document.querySelectorAll('.flash-message');
     serverFlashMessages.forEach(message => {
+        // If the message contains "Invalid or expired verification code", make sure it's in the "error" class
+        if (message.textContent.includes("Invalid or expired verification code") &&
+            !message.classList.contains('error')) {
+            message.classList.remove('danger');
+            message.classList.add('error');
+        }
+
         addFlashMessageHandlers(message);
     });
 });

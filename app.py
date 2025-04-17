@@ -18,7 +18,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from datetime import datetime, timedelta
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
-from utils.email_sender import generate_verification_code, send_verification_code, send_email
+from utils.email_sender import (
+    generate_verification_code,
+    send_verification_code,
+    send_email,
+)
 
 # Flask app setup
 app = Flask(__name__)
@@ -314,28 +318,76 @@ def verify():
 
     return render_template("verify.html", email=user.email)
 
-# Add resend code route
+
 @app.route("/resend-code", methods=["POST"])
 def resend_code():
+    # Check if user is in session (important for security)
     if "user_id" not in session:
-        return redirect(url_for("login"))
+        # For AJAX requests, return an error JSON
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return (
+                jsonify({"success": False, "message": "Authentication required."}),
+                401,
+            )
+        else:
+            flash("Please log in.", "warning")
+            return redirect(url_for("login"))
 
     user = db.session.get(User, session["user_id"])
     if not user:
         session.clear()
-        flash("User not found", "danger")
-        return redirect(url_for("login"))
+        # For AJAX requests, return an error JSON
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"success": False, "message": "User not found."}), 404
+        else:
+            flash("User not found", "danger")
+            return redirect(url_for("login"))
+
+    # Check if the user still needs verification (optional but good practice)
+    if not session.get("needs_verification"):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            # User is already verified, no need to resend
+            return jsonify({"success": True, "message": "Email already verified."}), 200
+        else:
+            # Redirect verified users away from verify page if they land here somehow
+            flash("Your email is already verified.", "info")
+            return redirect(
+                "http://127.0.0.1:7860"
+            )  # Or wherever verified users should go
 
     # Generate and send new verification code
     code = user.set_verification_code()
     db.session.commit()
 
-    if send_verification_code(user.email, code):
-        flash("Verification code resent. Please check your email.", "success")
-    else:
-        flash("Failed to send verification code. Please try again.", "danger")
+    success = send_verification_code(user.email, code)
 
-    return redirect(url_for("verify"))
+    # Check if it's an AJAX request (sent by verify.js)
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        if success:
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Verification code resent. Please check your email.",
+                }
+            )
+        else:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Failed to send verification code. Please try again.",
+                    }
+                ),
+                500,
+            )
+    else:
+        # Fallback for non-AJAX requests (shouldn't happen with current setup)
+        if success:
+            flash("Verification code resent. Please check your email.", "success")
+        else:
+            flash("Failed to send verification code. Please try again.", "danger")
+        # Still redirect for non-AJAX
+        return redirect(url_for("verify"))
 
 
 # Generate a secure token for password reset
@@ -387,7 +439,7 @@ This link will expire in 1 hour.
 If you did not request a password reset, please ignore this email.
 
 Regards,
-Sentiment Analysis System Team
+FHE Health Prediction Team
         """
 
         # Send email
