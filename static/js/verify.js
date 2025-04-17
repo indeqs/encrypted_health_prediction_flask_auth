@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Redirect after a short delay (to show success state)
             setTimeout(function () {
-                window.location.href = '/dashboard';
+                window.location.href = 'http://localhost:7860';
             }, 2000);
         } else {
             // Show error message

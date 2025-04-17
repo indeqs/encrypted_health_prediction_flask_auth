@@ -57,17 +57,17 @@ def send_email(recipient_email, subject, body):
 
 def send_verification_code(email, code):
     """Send a verification code to the user's email"""
-    subject = "Your Verification Code for Sentiment Analysis System"
+    subject = "Your Verification Code for FHE Health Prediction"
     body = f"""
 Hello,
 
-Your verification code for the Sentiment Analysis System is: {code}
+Your Verification Code for the FHE Health Prediction System is: {code}
 
 This code will expire in 10 minutes.
 
 If you did not request this code, please ignore this email.
 
 Regards,
-Sentiment Analysis System Team
+FHE Health Prediction Team
     """
     return send_email(email, subject, body)
