@@ -32,14 +32,16 @@
             --admin-text-dark: #333;
             --admin-text-light: #f8f9fa;
             --admin-border-color: #dee2e6;
-            /* ISSUE 4: Default sidebar width */
+            /* Default sidebar width - FIXED: Ensure this matches the JS default */
             --admin-sidebar-width: 250px;
         }
 
         body {
             background-color: var(--admin-content-bg);
             overflow-x: hidden;
-            /* Prevent horizontal scroll caused by resize handle initially */
+            /* Prevent horizontal scroll */
+            position: relative;
+            /* Create positioning context */
         }
 
         .admin-navbar {
@@ -56,10 +58,7 @@
         }
 
         .navbar-dark .navbar-nav .nav-link:hover,
-        .navbar-dark .navbar-nav .show>.nav-link
-
-        /* For dropdown */
-            {
+        .navbar-dark .navbar-nav .show>.nav-link {
             color: white;
         }
 
@@ -81,16 +80,12 @@
             bottom: 0;
             left: 0;
             z-index: 1020;
-            /* Below navbar */
             width: var(--admin-sidebar-width);
-            /* ISSUE 4: Use CSS variable */
             background-color: var(--admin-sidebar-bg);
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
             transition: width 0.2s ease-in-out;
-            /* Smooth transition for resize */
             display: flex;
             flex-direction: column;
-            /* Ensure content flows top-to-bottom */
             border-right: 1px solid var(--admin-border-color);
         }
 
@@ -102,7 +97,7 @@
             /* Add scroll if content overflows */
         }
 
-        /* Sidebar Links - ISSUE 1 Styling */
+        /* Sidebar Links - Styling */
         .admin-nav-link {
             display: flex;
             /* Use flex for icon alignment */
@@ -163,45 +158,41 @@
             /* Darker red text on hover */
         }
 
-
         /* Main Content Area */
         .admin-content {
             margin-left: var(--admin-sidebar-width);
-            /* ISSUE 4: Use CSS variable */
             padding: 25px;
             transition: margin-left 0.2s ease-in-out;
-            /* Smooth transition for resize */
             min-height: calc(100vh - 56px);
             /* Full height minus navbar */
         }
 
-
-        /* ISSUE 4: Resizer Handle */
+        /* FIXED: Improved Resizer Handle */
         .sidebar-resizer {
-            position: fixed;
+            position: absolute;
             top: 56px;
             /* Below navbar */
             bottom: 0;
             left: var(--admin-sidebar-width);
-            /* Positioned at the edge of the sidebar */
-            width: 8px;
-            /* Wider, easier to grab */
+            width: 5px;
+            /* Thinner for less visual impact */
             cursor: col-resize;
-            background-color: rgba(0, 0, 0, 0.1);
-            /* Subtle visual indicator */
+            background-color: transparent;
+            /* Start transparent */
             z-index: 1021;
-            /* Above sidebar, below navbar */
-            transition: left 0.2s ease-in-out, background-color 0.1s ease;
-            /* Smooth transition */
+            transition: background-color 0.2s ease;
+            /* Only transition color, not position */
         }
 
-        .sidebar-resizer:hover,
-        .sidebar-resizer.resizing {
-            /* Style when actively resizing */
+        .sidebar-resizer:hover {
             background-color: var(--admin-accent);
-            /* Highlight when hovering/dragging */
+            /* Highlight when hovering */
         }
 
+        .sidebar-resizer.resizing {
+            background-color: var(--admin-accent);
+            /* Highlight when dragging */
+        }
 
         /* Admin Cards */
         .admin-card {
@@ -252,11 +243,9 @@
 
         .dashboard-card .card-text {
             font-size: 2rem;
-            /* Slightly smaller */
             font-weight: 600;
             color: var(--admin-text-dark);
         }
-
 
         /* Table styles */
         .table-responsive {
@@ -320,7 +309,6 @@
         .badge.bg-secondary {
             background-color: #6c757d !important;
         }
-
 
         /* Make sure mobile view works well */
         @media (max-width: 768px) {
@@ -455,59 +443,54 @@
         </div>
     </nav>
 
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Admin sidebar -->
-            <!-- ISSUE 4: Added wrapper div -->
-            <nav class="admin-sidebar-wrapper" id="adminSidebar">
-                <div class="admin-sidebar-nav">
-                    <!-- ISSUE 1: Dynamic Active Class -->
-                    <a href="{{ url_for('adminDashboard') }}"
-                        class="admin-nav-link {% if request.endpoint == 'adminDashboard' %}active{% endif %}">
-                        <i class="fas fa-tachometer-alt fa-fw"></i> Dashboard
-                    </a>
-                    <a href="{{ url_for('adminDashboard') }}#userManagementTable"
-                        class="admin-nav-link {% if request.endpoint == 'adminDashboard' %}active{% endif %}">
-                        <!-- Can highlight based on dashboard too -->
-                        <i class="fas fa-users fa-fw"></i> User Management
-                    </a>
-                    <!-- Add other admin links here -->
-                    <!-- REMOVED THE COMMENTED-OUT SETTINGS LINK -->
+    <!-- FIXED: Container layout restructured -->
+    <div class="admin-sidebar-wrapper" id="adminSidebar">
+        <div class="admin-sidebar-nav">
+            <!-- Dynamic Active Class -->
+            <a href="{{ url_for('adminDashboard') }}"
+                class="admin-nav-link {% if request.endpoint == 'adminDashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt fa-fw"></i> Dashboard
+            </a>
+            <a href="{{ url_for('adminDashboard') }}#userManagementTable"
+                class="admin-nav-link {% if request.endpoint == 'adminDashboard' %}active{% endif %}">
+                <!-- Can highlight based on dashboard too -->
+                <i class="fas fa-users fa-fw"></i> User Management
+            </a>
+            <!-- Add other admin links here -->
 
-                    <hr class="mx-3"> <!-- Visual separator -->
+            <hr class="mx-3"> <!-- Visual separator -->
 
-                    <a href="{{ url_for('logout') }}" class="admin-nav-link text-danger">
-                        <i class="fas fa-sign-out-alt fa-fw"></i> Logout
-                    </a>
-                </div>
-            </nav>
-            <!-- ISSUE 4: Resizer Handle -->
-            <div class="sidebar-resizer d-none d-md-block" id="sidebarResizer"></div>
-            <!-- Mobile Sidebar Backdrop -->
-            <div class="sidebar-backdrop d-md-none" id="sidebarBackdrop"></div>
-
-
-            <!-- Admin content -->
-            <main class="admin-content" id="adminContent">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                <div id="flash-message-container"> <!-- Container for JS targeting -->
-                    {% for category, message in messages %}
-                    <!-- ISSUE 2: Added data attribute for JS auto-dismiss -->
-                    <div class="alert alert-{{ category }} alert-dismissible fade show my-3" role="alert"
-                        data-auto-dismiss="4000">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-                {% endwith %}
-
-                {% block content %}{% endblock %}
-            </main>
+            <a href="{{ url_for('logout') }}" class="admin-nav-link text-danger">
+                <i class="fas fa-sign-out-alt fa-fw"></i> Logout
+            </a>
         </div>
     </div>
+
+    <!-- FIXED: Resizer Handle positioned correctly -->
+    <div class="sidebar-resizer d-none d-md-block" id="sidebarResizer"></div>
+
+    <!-- Mobile Sidebar Backdrop -->
+    <div class="sidebar-backdrop d-md-none" id="sidebarBackdrop"></div>
+
+    <!-- Admin content -->
+    <main class="admin-content" id="adminContent">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div id="flash-message-container"> <!-- Container for JS targeting -->
+            {% for category, message in messages %}
+            <!-- Added data attribute for JS auto-dismiss -->
+            <div class="alert alert-{{ category }} alert-dismissible fade show my-3" role="alert"
+                data-auto-dismiss="4000">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
@@ -516,7 +499,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // ISSUE 2: Auto-dismiss flash messages
+            // Auto-dismiss flash messages
             const flashMessages = document.querySelectorAll('#flash-message-container .alert[data-auto-dismiss]');
             flashMessages.forEach(function (alert) {
                 const dismissTimeout = parseInt(alert.getAttribute('data-auto-dismiss'), 10) || 4000; // Default 4s
@@ -536,84 +519,97 @@
                 }
             });
 
-            // ISSUE 4: Resizable Sidebar Logic
+            // FIXED: Improved Resizable Sidebar Logic
             const sidebar = document.getElementById('adminSidebar');
             const resizer = document.getElementById('sidebarResizer');
             const content = document.getElementById('adminContent');
             const minSidebarWidth = 180; // Minimum width in pixels
             const maxSidebarWidth = 500; // Maximum width in pixels
             const sidebarWidthStorageKey = 'adminSidebarWidth';
+            const defaultWidth = 250; // Default width matching CSS variable
 
-            // Function to apply width
+            // Function to apply sidebar width and update content margin
             const setSidebarWidth = (width) => {
+                // Constrain width within limits
                 const constrainedWidth = Math.max(minSidebarWidth, Math.min(width, maxSidebarWidth));
                 const widthPx = `${constrainedWidth}px`;
-                document.documentElement.style.setProperty('--admin-sidebar-width', widthPx); // Update CSS variable
-                // Resizer position needs to update too
-                if (resizer) {
-                    resizer.style.left = widthPx;
-                }
+
+                // Update CSS variables for consistent application
+                document.documentElement.style.setProperty('--admin-sidebar-width', widthPx);
+
+                // Directly update elements for immediate feedback
+                if (sidebar) sidebar.style.width = widthPx;
+                if (content) content.style.marginLeft = widthPx;
+                if (resizer) resizer.style.left = widthPx;
             };
 
-            // Load saved width or set default
-            const savedWidth = localStorage.getItem(sidebarWidthStorageKey);
-            // Check if we are on a large enough screen to apply resizing
-            if (window.innerWidth >= 768) { // Corresponds to d-md-block for resizer
-                if (savedWidth) {
-                    setSidebarWidth(parseInt(savedWidth, 10));
-                } else {
-                    // Get initial width from CSS variable if not saved
-                    const initialWidth = getComputedStyle(document.documentElement).getPropertyValue('--admin-sidebar-width');
-                    setSidebarWidth(parseInt(initialWidth, 10) || 250);
-                }
+            // Load saved width or use default
+            if (window.innerWidth >= 768) { // Only apply on desktop
+                const savedWidth = localStorage.getItem(sidebarWidthStorageKey);
+                setSidebarWidth(savedWidth ? parseInt(savedWidth, 10) : defaultWidth);
             }
 
-
             let isResizing = false;
-            let startX;
-            let startWidth;
 
-            if (resizer) { // Ensure resizer exists
-                resizer.addEventListener('mousedown', (e) => {
-                    // Only resize if on medium screens and up
+            if (resizer) {
+                // Mouse events for desktop
+                resizer.addEventListener('mousedown', initResize);
+
+                // Touch events for tablets
+                resizer.addEventListener('touchstart', (e) => {
                     if (window.innerWidth < 768) return;
-
-                    isResizing = true;
-                    startX = e.clientX;
-                    startWidth = sidebar.offsetWidth; // Get current actual width
-                    resizer.classList.add('resizing'); // Add class for potential styling
-                    document.body.style.cursor = 'col-resize'; // Change cursor globally
-                    document.body.style.userSelect = 'none'; // Prevent text selection
-
-                    document.addEventListener('mousemove', handleMouseMove);
-                    document.addEventListener('mouseup', handleMouseUp);
+                    e.preventDefault();
+                    initResize(e.touches[0]);
                 });
             }
 
-            function handleMouseMove(e) {
-                if (!isResizing) return;
-                const currentX = e.clientX;
-                const diffX = currentX - startX;
-                const newWidth = startWidth + diffX;
-                setSidebarWidth(newWidth);
-            }
+            function initResize(e) {
+                // Only resize if on desktop
+                if (window.innerWidth < 768) return;
 
-            function handleMouseUp() {
-                if (isResizing) {
-                    isResizing = false;
-                    resizer.classList.remove('resizing');
-                    document.body.style.cursor = ''; // Restore default cursor
-                    document.body.style.userSelect = ''; // Restore text selection
+                isResizing = true;
+                const startX = e.clientX;
+                const startWidth = sidebar.offsetWidth;
 
-                    // Save the final width
-                    localStorage.setItem(sidebarWidthStorageKey, sidebar.offsetWidth.toString());
+                // Visual feedback during resize
+                resizer.classList.add('resizing');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
 
-                    document.removeEventListener('mousemove', handleMouseMove);
-                    document.removeEventListener('mouseup', handleMouseUp);
+                // Use document for mouse/touch tracking to handle dragging outside elements
+                document.addEventListener('mousemove', handleResize);
+                document.addEventListener('touchmove', (e) => handleResize(e.touches[0]));
+                document.addEventListener('mouseup', stopResize);
+                document.addEventListener('touchend', stopResize);
+                document.addEventListener('touchcancel', stopResize);
+
+                function handleResize(e) {
+                    if (!isResizing) return;
+                    const newWidth = startWidth + (e.clientX - startX);
+                    setSidebarWidth(newWidth);
+                }
+
+                function stopResize() {
+                    if (isResizing) {
+                        isResizing = false;
+                        resizer.classList.remove('resizing');
+                        document.body.style.cursor = '';
+                        document.body.style.userSelect = '';
+
+                        // Save final width for next page load
+                        localStorage.setItem(sidebarWidthStorageKey, sidebar.offsetWidth.toString());
+
+                        // Remove event listeners when done
+                        document.removeEventListener('mousemove', handleResize);
+                        document.removeEventListener('touchmove', handleResize);
+                        document.removeEventListener('mouseup', stopResize);
+                        document.removeEventListener('touchend', stopResize);
+                        document.removeEventListener('touchcancel', stopResize);
+                    }
                 }
             }
 
-            // --- Mobile Sidebar Toggle ---
+            // Mobile Sidebar Toggle
             const sidebarToggle = document.getElementById('sidebarToggle');
             const sidebarBackdrop = document.getElementById('sidebarBackdrop');
 
@@ -628,6 +624,21 @@
                     sidebarBackdrop.style.display = 'none';
                 });
             }
+
+            // Window resize handler to ensure responsive behavior
+            window.addEventListener('resize', () => {
+                if (window.innerWidth < 768) {
+                    // Mobile view - reset to default
+                    document.documentElement.style.removeProperty('--admin-sidebar-width');
+                    sidebar.style.width = '';
+                    content.style.marginLeft = '0';
+                    resizer.style.left = '';
+                } else if (!sidebar.classList.contains('show')) {
+                    // Desktop view - restore saved width
+                    const savedWidth = localStorage.getItem(sidebarWidthStorageKey);
+                    setSidebarWidth(savedWidth ? parseInt(savedWidth, 10) : defaultWidth);
+                }
+            });
 
         }); // End DOMContentLoaded
     </script>
