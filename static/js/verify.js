@@ -3,10 +3,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const codeInput = document.getElementById('verification_code');
     const verifyForm = document.getElementById('verification-form');
     const resendForm = document.getElementById('resend-form');
-    const resendButton = document.getElementById('resend-button');
-    const verifyButton = document.getElementById('verify-button');
-    const codeMessage = document.getElementById('code-message');
     const countdownElement = document.getElementById('countdown');
+    const codeMessage = document.getElementById('code-message');
 
     // Initialize verification timer
     let countdownTime = 5 * 60; // 5 minutes in seconds
@@ -51,10 +49,53 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Show code expired message
     function showCodeExpired() {
-        showFlashMessage('error', 'Verification code has expired. Please request a new one.');
-        resendButton.classList.remove('btn-disabled');
+        // Add a flash message to indicate code expiration
+        const flashContainer = document.getElementById('flash-messages');
+        const messageElement = document.createElement('div');
+        messageElement.className = 'flash-message error';
+        messageElement.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span class="flash-content">Verification code has expired. Please request a new one.</span>
+            <svg class="close-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        `;
+
+        flashContainer.appendChild(messageElement);
+
+        // Disable the verify button and input
+        const verifyButton = document.getElementById('verify-button');
+        verifyButton.disabled = true;
         verifyButton.classList.add('btn-disabled');
         codeInput.disabled = true;
+
+        // Add click handler for the close button
+        const closeBtn = messageElement.querySelector('.close-btn');
+        closeBtn.addEventListener('click', () => {
+            messageElement.style.opacity = '0';
+            setTimeout(() => {
+                if (flashContainer.contains(messageElement)) {
+                    flashContainer.removeChild(messageElement);
+                }
+            }, 300);
+        });
+
+        // Auto-dismiss after 4 seconds
+        setTimeout(() => {
+            messageElement.style.opacity = '0';
+            setTimeout(() => {
+                if (flashContainer.contains(messageElement)) {
+                    flashContainer.removeChild(messageElement);
+                }
+            }, 300);
+        }, 4000);
     }
 
     // Focus on verification code input
@@ -83,184 +124,57 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Handle verification form submission
+    // Handle verification form submission - let server handle everything
     if (verifyForm) {
-        verifyForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const code = codeInput.value.trim();
-
-            if (code.length !== 6) {
-                codeMessage.textContent = 'Please enter a valid 6-digit code';
-                codeInput.parentElement.parentElement.classList.add('is-invalid');
-                return;
-            }
-
-            // Show loading state
+        verifyForm.addEventListener('submit', function () {
+            // Show loading state on button during form submission
+            const verifyButton = document.getElementById('verify-button');
             verifyButton.classList.add('btn-loading');
-            verifyButton.disabled = true;
 
-            // Simulate verification process
-            setTimeout(function () {
-                // This would normally be handled by the server
-                // For demonstration, we'll simulate success and redirect
-
-                // Simulate success (in real implementation, this would be a fetch request)
-                verifyEmail(code);
-            }, 1500);
+            // Don't need to prevent default - let the form submit normally
+            // The server will handle verification and redirection
         });
     }
 
-    // Handle resend code form submission
+    // Handle resend code form - let server handle everything
     if (resendForm) {
-        resendForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            // Show loading state
+        resendForm.addEventListener('submit', function () {
+            // Show loading state on button during form submission
+            const resendButton = document.getElementById('resend-button');
             resendButton.classList.add('btn-loading');
             resendButton.disabled = true;
 
-            // Simulate resend process
-            setTimeout(function () {
-                // Reset UI
-                resendButton.classList.remove('btn-loading');
-                resendButton.disabled = false;
-
-                // Reset the verification code input
-                codeInput.value = '';
-                codeInput.classList.remove('is-valid');
-                codeInput.disabled = false;
-
-                // Show success message
-                showFlashMessage('success', 'A new verification code has been sent to your email');
-
-                // Reset the countdown timer
-                startCountdown();
-
-                // Re-enable verification button
-                verifyButton.classList.remove('btn-disabled');
-                verifyButton.disabled = false;
-            }, 2000);
+            // Don't need to prevent default - let the form submit normally
+            // The server will handle resending the code
         });
     }
 
-    // Function to handle email verification
-    function verifyEmail(code) {
-        // In a real implementation, this would be a fetch request to the server
-        // For this demo, we'll simulate the verification process
-
-        // Simulate server validation (in real implementation, this would be a fetch call)
-        const isValid = true; // Simulated validation result
-
-        if (isValid) {
-            // Show success message
-            showFlashMessage('success', 'Email verification successful!');
-
-            // Add success animation to the form
-            verifyForm.classList.add('verification-success');
-
-            // Show verification success UI
-            codeInput.classList.add('is-valid');
-            verifyButton.classList.remove('btn-loading');
-            verifyButton.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                Verified Successfully
-            `;
-
-            // Redirect after a short delay (to show success state)
-            setTimeout(function () {
-                window.location.href = 'http://localhost:7860';
-            }, 2000);
-        } else {
-            // Show error message
-            showFlashMessage('error', 'Invalid verification code. Please try again.');
-
-            // Reset UI
-            verifyButton.classList.remove('btn-loading');
-            verifyButton.disabled = false;
-            codeInput.classList.remove('is-valid');
-            codeInput.classList.add('is-invalid');
-            codeInput.focus();
+    // Check if we have server-side flash messages to display
+    const serverFlashMessages = document.querySelectorAll('.flash-message');
+    serverFlashMessages.forEach(message => {
+        // Add close button functionality to server-generated flash messages
+        const closeBtn = message.querySelector('.close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                message.style.opacity = '0';
+                setTimeout(() => {
+                    if (message.parentElement.contains(message)) {
+                        message.parentElement.removeChild(message);
+                    }
+                }, 300);
+            });
         }
-    }
-
-    // Function to display flash messages
-    function showFlashMessage(type, message) {
-        const flashContainer = document.getElementById('flash-messages');
-
-        // Create message element
-        const messageElement = document.createElement('div');
-        messageElement.className = `flash-message ${type}`;
-
-        // Create content wrapper for the message text
-        const contentWrapper = document.createElement('span');
-        contentWrapper.className = 'flash-content';
-        contentWrapper.textContent = message;
-
-        // Add icon based on message type
-        const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        iconSvg.setAttribute('viewBox', '0 0 24 24');
-        iconSvg.setAttribute('fill', 'none');
-        iconSvg.setAttribute('stroke', 'currentColor');
-        iconSvg.setAttribute('stroke-width', '2');
-        iconSvg.setAttribute('stroke-linecap', 'round');
-        iconSvg.setAttribute('stroke-linejoin', 'round');
-
-        let iconPath;
-
-        if (type === 'success') {
-            iconPath = '<polyline points="20 6 9 17 4 12"></polyline>';
-        } else if (type === 'error') {
-            iconPath = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>';
-        } else {
-            iconPath = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>';
-        }
-
-        iconSvg.innerHTML = iconPath;
-
-        // Create close button
-        const closeBtn = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        closeBtn.setAttribute('viewBox', '0 0 24 24');
-        closeBtn.setAttribute('fill', 'none');
-        closeBtn.setAttribute('stroke', 'currentColor');
-        closeBtn.setAttribute('stroke-width', '2');
-        closeBtn.setAttribute('stroke-linecap', 'round');
-        closeBtn.setAttribute('stroke-linejoin', 'round');
-        closeBtn.setAttribute('class', 'close-btn');
-        closeBtn.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
-
-        // Close button click handler
-        closeBtn.addEventListener('click', () => {
-            messageElement.style.opacity = '0';
-            setTimeout(() => {
-                if (flashContainer.contains(messageElement)) {
-                    flashContainer.removeChild(messageElement);
-                }
-            }, 300);
-        });
-
-        // Append elements in the correct order (icon, message, close button)
-        messageElement.appendChild(iconSvg);
-        messageElement.appendChild(contentWrapper);
-        messageElement.appendChild(closeBtn);
-
-        // Add message to container
-        flashContainer.appendChild(messageElement);
 
         // Auto-dismiss after 4 seconds
         setTimeout(() => {
-            messageElement.style.opacity = '0';
+            message.style.opacity = '0';
             setTimeout(() => {
-                if (flashContainer.contains(messageElement)) {
-                    flashContainer.removeChild(messageElement);
+                if (message.parentElement && message.parentElement.contains(message)) {
+                    message.parentElement.removeChild(message);
                 }
             }, 300);
         }, 4000);
-    }
+    });
 
     // Alternative OTP input visualization (optional enhancement)
     function createOtpDigitDisplay() {

@@ -308,12 +308,11 @@ def verify():
                 return redirect(url_for("adminDashboard"))
             else:
                 # Redirect normal users to external URL
-                return redirect("http://localhost:5678")
+                return redirect("http://localhost:7860/")
         else:
             flash("Invalid or expired verification code", "danger")
 
     return render_template("verify.html", email=user.email)
-
 
 # Add resend code route
 @app.route("/resend-code", methods=["POST"])
