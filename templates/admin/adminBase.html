@@ -4,59 +4,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Admin - Sentiment Analysis System{% endblock %}</title>
+    <title>{% block title %}Admin - FHE Health Prediction{% endblock %}</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.ico') }}">
-    <!-- templates/admin/adminBase.html - Updated styles section -->
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
     <style>
         /* Admin-specific styles */
         :root {
             --admin-primary: #1a237e;
+            /* Deep indigo */
             --admin-secondary: #283593;
+            /* Slightly lighter indigo */
             --admin-accent: #3949ab;
+            /* Indigo */
             --admin-light: #e8eaf6;
+            /* Light indigo */
+            --admin-sidebar-bg: #ffffff;
+            /* White sidebar */
+            --admin-content-bg: #f5f7fa;
+            /* Light grey content area */
+            --admin-text-dark: #333;
+            --admin-text-light: #f8f9fa;
+            --admin-border-color: #dee2e6;
+            /* ISSUE 4: Default sidebar width */
+            --admin-sidebar-width: 250px;
         }
 
         body {
-            background-color: #f5f7fa;
+            background-color: var(--admin-content-bg);
+            overflow-x: hidden;
+            /* Prevent horizontal scroll caused by resize handle initially */
         }
 
         .admin-navbar {
             background-color: var(--admin-primary);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+            /* Ensure navbar stays above sidebar */
         }
 
         .navbar-dark .navbar-nav .nav-link {
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(255, 255, 255, 0.9);
         }
 
-        .navbar-dark .navbar-nav .nav-link:hover {
+        .navbar-dark .navbar-nav .nav-link:hover,
+        .navbar-dark .navbar-nav .show>.nav-link
+
+        /* For dropdown */
+            {
             color: white;
         }
 
-        .admin-sidebar {
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            height: calc(100vh - 56px);
+        .admin-brand {
+            color: white;
+            font-weight: 600;
+            font-size: 1.15rem;
+        }
+
+        .admin-brand i {
+            margin-right: 8px;
+        }
+
+        /* Sidebar */
+        .admin-sidebar-wrapper {
             position: fixed;
-            width: 250px;
+            top: 56px;
+            /* Height of navbar */
+            bottom: 0;
+            left: 0;
+            z-index: 1020;
+            /* Below navbar */
+            width: var(--admin-sidebar-width);
+            /* ISSUE 4: Use CSS variable */
+            background-color: var(--admin-sidebar-bg);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            transition: width 0.2s ease-in-out;
+            /* Smooth transition for resize */
+            display: flex;
+            flex-direction: column;
+            /* Ensure content flows top-to-bottom */
+            border-right: 1px solid var(--admin-border-color);
         }
 
+        .admin-sidebar-nav {
+            padding-top: 1rem;
+            flex-grow: 1;
+            /* Allow nav to take available space */
+            overflow-y: auto;
+            /* Add scroll if content overflows */
+        }
+
+        /* Sidebar Links - ISSUE 1 Styling */
+        .admin-nav-link {
+            display: flex;
+            /* Use flex for icon alignment */
+            align-items: center;
+            /* Vertically center icon and text */
+            color: var(--admin-text-dark);
+            padding: 12px 20px;
+            /* Consistent padding */
+            margin: 4px 10px;
+            /* Vertical spacing, horizontal margin */
+            border-radius: 6px;
+            /* Slightly rounded corners */
+            text-decoration: none;
+            /* Remove underline */
+            font-weight: 500;
+            /* Medium weight */
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .admin-nav-link:hover {
+            background-color: var(--admin-light);
+            color: var(--admin-primary);
+        }
+
+        /* Active link style */
+        .admin-nav-link.active {
+            background-color: var(--admin-primary);
+            color: var(--admin-text-light);
+            font-weight: 600;
+        }
+
+        /* Ensure hover on active link doesn't look weird */
+        .admin-nav-link.active:hover {
+            background-color: var(--admin-secondary);
+            color: var(--admin-text-light);
+        }
+
+        .admin-nav-link i {
+            width: 25px;
+            /* Fixed width for icons */
+            text-align: center;
+            margin-right: 12px;
+            /* Space between icon and text */
+            font-size: 1.1em;
+            /* Slightly larger icons */
+        }
+
+        /* Logout link styling */
+        .admin-nav-link.text-danger {
+            color: #dc3545;
+            /* Bootstrap danger color */
+        }
+
+        .admin-nav-link.text-danger:hover {
+            background-color: rgba(220, 53, 69, 0.1);
+            /* Light red background on hover */
+            color: #a71d2a;
+            /* Darker red text on hover */
+        }
+
+
+        /* Main Content Area */
         .admin-content {
-            margin-left: 250px;
-            padding: 20px;
+            margin-left: var(--admin-sidebar-width);
+            /* ISSUE 4: Use CSS variable */
+            padding: 25px;
+            transition: margin-left 0.2s ease-in-out;
+            /* Smooth transition for resize */
+            min-height: calc(100vh - 56px);
+            /* Full height minus navbar */
         }
 
+
+        /* ISSUE 4: Resizer Handle */
+        .sidebar-resizer {
+            position: fixed;
+            top: 56px;
+            /* Below navbar */
+            bottom: 0;
+            left: var(--admin-sidebar-width);
+            /* Positioned at the edge of the sidebar */
+            width: 8px;
+            /* Wider, easier to grab */
+            cursor: col-resize;
+            background-color: rgba(0, 0, 0, 0.1);
+            /* Subtle visual indicator */
+            z-index: 1021;
+            /* Above sidebar, below navbar */
+            transition: left 0.2s ease-in-out, background-color 0.1s ease;
+            /* Smooth transition */
+        }
+
+        .sidebar-resizer:hover,
+        .sidebar-resizer.resizing {
+            /* Style when actively resizing */
+            background-color: var(--admin-accent);
+            /* Highlight when hovering/dragging */
+        }
+
+
+        /* Admin Cards */
         .admin-card {
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
             border: none;
+            margin-bottom: 1.5rem;
         }
 
         .admin-card .card-header {
@@ -64,76 +216,195 @@
             color: white;
             border-radius: 8px 8px 0 0;
             border-bottom: none;
+            padding: 0.8rem 1.2rem;
+            font-weight: 500;
         }
 
-        .admin-brand {
-            color: white;
-            font-weight: 700;
+        .admin-card .card-body {
+            padding: 1.5rem;
         }
 
-        .admin-nav-link {
-            color: #333;
-            padding: 12px 15px;
-            border-radius: 5px;
-            margin: 5px 10px;
-            transition: all 0.3s;
+        .admin-card .card-footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid var(--admin-border-color);
+            border-radius: 0 0 8px 8px;
         }
 
-        .admin-nav-link:hover,
-        .admin-nav-link.active {
+        /* Dashboard Stat Cards */
+        .dashboard-card .card-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dashboard-card i {
+            margin-bottom: 1rem;
+            opacity: 0.8;
+        }
+
+        .dashboard-card .card-title {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-card .card-text {
+            font-size: 2rem;
+            /* Slightly smaller */
+            font-weight: 600;
+            color: var(--admin-text-dark);
+        }
+
+
+        /* Table styles */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table {
+            margin-bottom: 0;
+            /* Remove default bottom margin inside card */
+        }
+
+        .table thead th {
+            background-color: #e9ecef;
+            /* Light grey header */
+            border-bottom-width: 1px;
+            font-weight: 600;
+            color: #495057;
+            white-space: nowrap;
+            /* Prevent headers from wrapping */
+        }
+
+        .table-hover tbody tr:hover {
             background-color: var(--admin-light);
-            color: var(--admin-primary);
+            /* Hover effect */
         }
 
-        .admin-nav-link i {
-            width: 20px;
-            text-align: center;
-            margin-right: 10px;
+        .table td,
+        .table th {
+            vertical-align: middle;
+            /* Align content vertically */
         }
 
-        /* Override primary button colors */
-        .btn-primary {
-            background-color: var(--admin-primary);
-            border-color: var(--admin-primary);
+        .table .btn-group .btn {
+            padding: 0.25rem 0.5rem;
+            /* Smaller buttons in table */
+            font-size: 0.8rem;
         }
 
-        .btn-primary:hover {
-            background-color: var(--admin-secondary);
-            border-color: var(--admin-secondary);
+        .table .btn-group .btn i {
+            margin-right: 4px;
         }
 
-        .bg-primary {
-            background-color: var(--admin-primary) !important;
-        }
-
-        /* Override other Bootstrap elements */
-        .dropdown-item:active {
-            background-color: var(--admin-primary);
+        /* Badges */
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.4em 0.6em;
         }
 
         .badge.bg-success {
-            background-color: #2e7d32 !important;
+            background-color: #198754 !important;
         }
 
         .badge.bg-danger {
-            background-color: #c62828 !important;
+            background-color: #dc3545 !important;
         }
 
-        /* Table styles */
-        .table-striped tbody tr:nth-of-type(odd) {
-            background-color: var(--admin-light);
+        .badge.bg-warning {
+            background-color: #ffc107 !important;
         }
+
+        .badge.bg-secondary {
+            background-color: #6c757d !important;
+        }
+
 
         /* Make sure mobile view works well */
         @media (max-width: 768px) {
-            .admin-sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
+
+            /* Hide sidebar by default on small screens, show toggle button */
+            .admin-sidebar-wrapper {
+                /* Position it off-screen or hide it */
+                position: fixed;
+                left: -100%;
+                /* Move off-screen */
+                width: 280px;
+                /* Fixed width when shown */
+                transition: left 0.3s ease-in-out;
+                z-index: 1040;
+                /* Above content, below navbar backdrop */
+            }
+
+            .admin-sidebar-wrapper.show {
+                left: 0;
+                /* Slide in */
             }
 
             .admin-content {
                 margin-left: 0;
+                /* Full width content */
+                transition: none;
+                /* No transition needed for margin */
+            }
+
+            /* Add a backdrop when sidebar is open on mobile */
+            .sidebar-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 1035;
+                /* Below sidebar, above content */
+                display: none;
+                /* Hidden by default */
+            }
+
+            .admin-sidebar-wrapper.show+.sidebar-backdrop {
+                display: block;
+                /* Show backdrop */
+            }
+
+            /* Resizer not needed on mobile */
+            .sidebar-resizer {
+                display: none;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+
+            .admin-navbar,
+            .admin-sidebar-wrapper,
+            .sidebar-resizer,
+            .btn,
+            .alert,
+            #userSearch {
+                display: none !important;
+            }
+
+            .admin-content {
+                margin-left: 0 !important;
+                padding: 0 !important;
+            }
+
+            .card {
+                box-shadow: none !important;
+                border: 1px solid #ccc !important;
+            }
+
+            .table,
+            .table th,
+            .table td {
+                border: 1px solid #ccc !important;
+            }
+
+            body {
+                background-color: #fff !important;
             }
         }
     </style>
@@ -144,25 +415,38 @@
     <!-- Admin navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark admin-navbar">
         <div class="container-fluid">
-            <a class="navbar-brand admin-brand" href="{{ url_for('adminDashboard') }}">
-                <i class="fas fa-shield-alt"></i> Admin Dashboard
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar">
+            <!-- Hamburger Toggle for Mobile Sidebar -->
+            <button class="navbar-toggler d-md-none me-2" type="button" id="sidebarToggle"
+                aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="adminNavbar">
+
+            <a class="navbar-brand admin-brand" href="{{ url_for('adminDashboard') }}">
+                <i class="fas fa-shield-alt"></i> Admin Panel
+            </a>
+
+            <!-- Standard Navbar Toggler for User Menu on smaller screens -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbarUserMenu"
+                aria-controls="adminNavbarUserMenu" aria-expanded="false" aria-label="Toggle user navigation">
+                <i class="fas fa-user"></i> <!-- User icon for clarity -->
+            </button>
+
+            <div class="collapse navbar-collapse" id="adminNavbarUserMenu">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="adminUserDropdown" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user-shield"></i> Admin
+                            <i class="fas fa-user-shield me-1"></i> Admin <!-- Show Admin text -->
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminUserDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
-                                    <i class="fas fa-sign-out-alt"></i> Logout
+                            <li><a class="dropdown-item" href="{{ url_for('home') }}">
+                                    <i class="fas fa-home fa-fw me-2"></i> Public Site Home
                                 </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('login') }}">
-                                    <i class="fas fa-home"></i> Return to Site
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt fa-fw me-2"></i> Logout
                                 </a></li>
                         </ul>
                     </li>
@@ -174,31 +458,49 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Admin sidebar -->
-            <div class="col-md-3 col-lg-2 admin-sidebar d-none d-md-block">
-                <div class="pt-4">
-                    <a href="{{ url_for('adminDashboard') }}" class="d-block admin-nav-link active">
-                        <i class="fas fa-tachometer-alt"></i> Dashboard
+            <!-- ISSUE 4: Added wrapper div -->
+            <nav class="admin-sidebar-wrapper" id="adminSidebar">
+                <div class="admin-sidebar-nav">
+                    <!-- ISSUE 1: Dynamic Active Class -->
+                    <a href="{{ url_for('adminDashboard') }}"
+                        class="admin-nav-link {% if request.endpoint == 'adminDashboard' %}active{% endif %}">
+                        <i class="fas fa-tachometer-alt fa-fw"></i> Dashboard
                     </a>
-                    <a href="{{ url_for('adminDashboard') }}" class="d-block admin-nav-link">
-                        <i class="fas fa-users"></i> User Management
+                    <a href="{{ url_for('adminDashboard') }}#userManagementTable"
+                        class="admin-nav-link {% if request.endpoint == 'adminDashboard' %}active{% endif %}">
+                        <!-- Can highlight based on dashboard too -->
+                        <i class="fas fa-users fa-fw"></i> User Management
                     </a>
-                    <hr>
-                    <a href="{{ url_for('logout') }}" class="d-block admin-nav-link text-danger">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                    <!-- Add other admin links here -->
+                    <!-- REMOVED THE COMMENTED-OUT SETTINGS LINK -->
+
+                    <hr class="mx-3"> <!-- Visual separator -->
+
+                    <a href="{{ url_for('logout') }}" class="admin-nav-link text-danger">
+                        <i class="fas fa-sign-out-alt fa-fw"></i> Logout
                     </a>
                 </div>
-            </div>
+            </nav>
+            <!-- ISSUE 4: Resizer Handle -->
+            <div class="sidebar-resizer d-none d-md-block" id="sidebarResizer"></div>
+            <!-- Mobile Sidebar Backdrop -->
+            <div class="sidebar-backdrop d-md-none" id="sidebarBackdrop"></div>
+
 
             <!-- Admin content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 admin-content">
+            <main class="admin-content" id="adminContent">
                 {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show my-3" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div id="flash-message-container"> <!-- Container for JS targeting -->
+                    {% for category, message in messages %}
+                    <!-- ISSUE 2: Added data attribute for JS auto-dismiss -->
+                    <div class="alert alert-{{ category }} alert-dismissible fade show my-3" role="alert"
+                        data-auto-dismiss="4000">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
                 {% endif %}
                 {% endwith %}
 
@@ -209,8 +511,126 @@
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <!-- Custom JS (if you have one) -->
+    <!-- <script src="{{ url_for('static', filename='js/main.js') }}"></script> -->
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // ISSUE 2: Auto-dismiss flash messages
+            const flashMessages = document.querySelectorAll('#flash-message-container .alert[data-auto-dismiss]');
+            flashMessages.forEach(function (alert) {
+                const dismissTimeout = parseInt(alert.getAttribute('data-auto-dismiss'), 10) || 4000; // Default 4s
+                if (dismissTimeout > 0) {
+                    setTimeout(() => {
+                        // Use Bootstrap's built-in dismiss functionality if available
+                        const alertInstance = bootstrap.Alert.getOrCreateInstance(alert);
+                        if (alertInstance) {
+                            alertInstance.close();
+                        } else {
+                            // Fallback if Bootstrap JS isn't fully loaded or fails
+                            alert.style.transition = 'opacity 0.5s ease';
+                            alert.style.opacity = '0';
+                            setTimeout(() => alert.remove(), 500); // Remove after fade out
+                        }
+                    }, dismissTimeout);
+                }
+            });
+
+            // ISSUE 4: Resizable Sidebar Logic
+            const sidebar = document.getElementById('adminSidebar');
+            const resizer = document.getElementById('sidebarResizer');
+            const content = document.getElementById('adminContent');
+            const minSidebarWidth = 180; // Minimum width in pixels
+            const maxSidebarWidth = 500; // Maximum width in pixels
+            const sidebarWidthStorageKey = 'adminSidebarWidth';
+
+            // Function to apply width
+            const setSidebarWidth = (width) => {
+                const constrainedWidth = Math.max(minSidebarWidth, Math.min(width, maxSidebarWidth));
+                const widthPx = `${constrainedWidth}px`;
+                document.documentElement.style.setProperty('--admin-sidebar-width', widthPx); // Update CSS variable
+                // Resizer position needs to update too
+                if (resizer) {
+                    resizer.style.left = widthPx;
+                }
+            };
+
+            // Load saved width or set default
+            const savedWidth = localStorage.getItem(sidebarWidthStorageKey);
+            // Check if we are on a large enough screen to apply resizing
+            if (window.innerWidth >= 768) { // Corresponds to d-md-block for resizer
+                if (savedWidth) {
+                    setSidebarWidth(parseInt(savedWidth, 10));
+                } else {
+                    // Get initial width from CSS variable if not saved
+                    const initialWidth = getComputedStyle(document.documentElement).getPropertyValue('--admin-sidebar-width');
+                    setSidebarWidth(parseInt(initialWidth, 10) || 250);
+                }
+            }
+
+
+            let isResizing = false;
+            let startX;
+            let startWidth;
+
+            if (resizer) { // Ensure resizer exists
+                resizer.addEventListener('mousedown', (e) => {
+                    // Only resize if on medium screens and up
+                    if (window.innerWidth < 768) return;
+
+                    isResizing = true;
+                    startX = e.clientX;
+                    startWidth = sidebar.offsetWidth; // Get current actual width
+                    resizer.classList.add('resizing'); // Add class for potential styling
+                    document.body.style.cursor = 'col-resize'; // Change cursor globally
+                    document.body.style.userSelect = 'none'; // Prevent text selection
+
+                    document.addEventListener('mousemove', handleMouseMove);
+                    document.addEventListener('mouseup', handleMouseUp);
+                });
+            }
+
+            function handleMouseMove(e) {
+                if (!isResizing) return;
+                const currentX = e.clientX;
+                const diffX = currentX - startX;
+                const newWidth = startWidth + diffX;
+                setSidebarWidth(newWidth);
+            }
+
+            function handleMouseUp() {
+                if (isResizing) {
+                    isResizing = false;
+                    resizer.classList.remove('resizing');
+                    document.body.style.cursor = ''; // Restore default cursor
+                    document.body.style.userSelect = ''; // Restore text selection
+
+                    // Save the final width
+                    localStorage.setItem(sidebarWidthStorageKey, sidebar.offsetWidth.toString());
+
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                }
+            }
+
+            // --- Mobile Sidebar Toggle ---
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+            if (sidebarToggle && sidebar && sidebarBackdrop) {
+                sidebarToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('show');
+                    sidebarBackdrop.style.display = sidebar.classList.contains('show') ? 'block' : 'none';
+                });
+
+                sidebarBackdrop.addEventListener('click', () => {
+                    sidebar.classList.remove('show');
+                    sidebarBackdrop.style.display = 'none';
+                });
+            }
+
+        }); // End DOMContentLoaded
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 

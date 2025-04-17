@@ -1,10 +1,12 @@
 from dotenv import load_dotenv
 
 load_dotenv()
-
+import csv
+from io import StringIO
 from flask import (
     Flask,
     render_template,
+    make_response,
     request,
     redirect,
     url_for,
@@ -138,19 +140,24 @@ def ban_check(f):
     return decorated_function
 
 
-# Apply ban_check to all routes
-def before_request():
-    if "user_id" in session:
-        user = db.session.get(User, session["user_id"])
-        if user and user.is_banned:
-            session.clear()
-            flash("Your account has been banned", "danger")
-            return redirect(url_for("login"))
-
-
 # Routes
 @app.route("/")
 def home():
+    # Redirect logged-in users away from the generic home page if desired
+    if "user_id" in session:
+        user = db.session.get(User, session["user_id"])
+        if user:
+            if user.is_admin:
+                # Don't redirect admin from here, maybe they want to see the public home?
+                # Or redirect to admin dashboard: return redirect(url_for('adminDashboard'))
+                pass  # Let admin see the public home page if they navigate here
+            elif user.is_verified:
+                # Redirect verified non-admin users to their main app
+                return redirect("http://localhost:7860/")
+            else:
+                # Redirect unverified users to verification
+                return redirect(url_for("verify"))
+    # Render home for logged-out users
     return render_template("index.html")
 
 
@@ -204,12 +211,15 @@ def signup():
                 flash("Account created! Please verify your email.", "success")
                 return redirect(url_for("verify"))
             else:
+                app.logger.error(f"Failed to send verification email to {email}")
                 flash(
                     "Account created but couldn't send verification email. Please try logging in.",
                     "warning",
                 )
                 return redirect(url_for("login"))
         except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error during signup: {e}")
             flash("An error occurred. Please try again.", "danger")
             return redirect(url_for("signup"))
 
@@ -224,7 +234,7 @@ def login():
 
         # Validation
         if not all([username, password]):
-            flash("All fields are required", "error")
+            flash("Username and password are required", "error")
             return render_template("login.html")
 
         # Check if user exists
@@ -237,123 +247,178 @@ def login():
 
         # Check if user is banned
         if user.is_banned:
-            flash("Your account has been banned", "danger")
+            flash("Your account has been banned. Please contact support.", "danger")
             return redirect(url_for("login"))
 
-        # Skip verification for admin user
-        if user.username == "admin":
-            # Mark admin as verified if they aren't already
-            if not user.is_verified:
-                user.is_verified = True
-                db.session.commit()
+        # User exists, password is correct, and not banned.
+        # Store user ID in session immediately.
+        session["user_id"] = user.id
 
-            # Log admin in
-            session["user_id"] = user.id
-            session["needs_verification"] = False
-            flash(f"Welcome back, {user.username}!", "success")
-            return redirect(url_for("adminDashboard"))
-
-        # Check if user is verified
+        # Check verification status
         if not user.is_verified:
             # Generate and send new verification code
             code = user.set_verification_code()
             db.session.commit()
 
             if send_verification_code(user.email, code):
-                # Store user_id in session but mark as unverified
-                session["user_id"] = user.id
+                # Mark session as needing verification
                 session["needs_verification"] = True
-
-                flash("Please verify your email to continue.", "warning")
+                flash(
+                    "Your email is not verified. Please check your inbox for a verification code.",
+                    "warning",
+                )
                 return redirect(url_for("verify"))
             else:
-                flash("Couldn't send verification email. Please try again.", "danger")
+                # Log error, clear session, and inform user
+                app.logger.error(
+                    f"Failed to send verification email to {user.email} during login."
+                )
+                session.clear()  # Log out user if verification email fails critically
+                flash(
+                    "Couldn't send verification email. Please try logging in again or contact support.",
+                    "danger",
+                )
                 return redirect(url_for("login"))
+        else:
+            # User is verified, clear the verification flag if it exists
+            session["needs_verification"] = False
 
-        # Log user in
-        session["user_id"] = user.id
-        session["needs_verification"] = False
+            # *** <<< FIX FOR ISSUE 3 >>> ***
+            # Check if the verified user is an admin
+            if user.is_admin:
+                flash(f"Welcome back, Admin {user.username}!", "success")
+                return redirect(url_for("adminDashboard"))
+            else:
+                # Verified non-admin user
+                flash(f"Welcome back, {user.username}!", "success")
+                # Redirect normal users to the external URL
+                return redirect("http://localhost:7860/")
+            # *** <<< END FIX FOR ISSUE 3 >>> ***
 
-        flash(f"Welcome back, {user.username}!", "success")
-
-        # Redirect normal users to external URL
-        return redirect("http://localhost:7860/")
-
+    # For GET request or if POST fails validation before checks
     return render_template("login.html")
 
 
 @app.route("/verify", methods=["GET", "POST"])
 def verify():
-    # Check if user is in session and needs verification
-    if "user_id" not in session or not session.get("needs_verification"):
+    # Check if user is in session AND needs verification
+    if "user_id" not in session:
+        flash("Please log in first.", "warning")
         return redirect(url_for("login"))
+    if not session.get("needs_verification", False):  # Default to False if key missing
+        flash("Your email is already verified.", "info")
+        # Redirect already verified users appropriately
+        user = db.session.get(User, session["user_id"])
+        if user and user.is_admin:
+            return redirect(url_for("adminDashboard"))
+        elif user:
+            return redirect("http://localhost:7860/")
+        else:  # Should not happen if user_id is in session, but handle defensively
+            session.clear()
+            return redirect(url_for("login"))
 
     user = db.session.get(User, session["user_id"])
     if not user:
         session.clear()
-        flash("User not found", "danger")
+        flash("User session error. Please log in again.", "danger")
         return redirect(url_for("login"))
+
+    # If user somehow got marked as verified in DB but not session, fix session
+    if user.is_verified:
+        session["needs_verification"] = False
+        flash("Your email is already verified.", "info")
+        if user.is_admin:
+            return redirect(url_for("adminDashboard"))
+        else:
+            return redirect("http://localhost:7860/")
 
     if request.method == "POST":
         code = request.form.get("verification_code")
 
         if not code:
             flash("Verification code is required", "danger")
-            return redirect(url_for("verify"))
+            # Don't redirect, show error on the same page
+            return render_template("verify.html", email=user.email)
 
-        if user.verify_code(code):
+        if user.verify_code(code):  # verify_code now handles marking user verified
             db.session.commit()
-            session["needs_verification"] = False
+            session["needs_verification"] = False  # Update session state
 
             flash("Email verified successfully!", "success")
 
-            # Redirect based on user type
+            # Redirect based on user type AFTER successful verification
             if user.is_admin:
                 return redirect(url_for("adminDashboard"))
             else:
                 # Redirect normal users to external URL
                 return redirect("http://localhost:7860/")
         else:
-            flash("Invalid or expired verification code", "danger")
+            # Check if the code might have expired
+            expired = (
+                user.verification_code_expires
+                and datetime.utcnow() > user.verification_code_expires
+            )
+            if expired:
+                flash(
+                    "Verification code has expired. Please request a new one.", "danger"
+                )
+            else:
+                flash("Invalid verification code. Please try again.", "danger")
+            # Show error on the same page
+            return render_template("verify.html", email=user.email)
 
+    # For GET request
     return render_template("verify.html", email=user.email)
 
 
 @app.route("/resend-code", methods=["POST"])
 def resend_code():
-    # Check if user is in session (important for security)
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+    # Security: Ensure user is logged in
     if "user_id" not in session:
-        # For AJAX requests, return an error JSON
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return (
-                jsonify({"success": False, "message": "Authentication required."}),
-                401,
-            )
+        message = "Authentication required. Please log in."
+        if is_ajax:
+            return jsonify({"success": False, "message": message}), 401
         else:
-            flash("Please log in.", "warning")
+            flash(message, "warning")
             return redirect(url_for("login"))
 
     user = db.session.get(User, session["user_id"])
     if not user:
         session.clear()
-        # For AJAX requests, return an error JSON
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"success": False, "message": "User not found."}), 404
+        message = "User session error. Please log in again."
+        if is_ajax:
+            return jsonify({"success": False, "message": message}), 404
         else:
-            flash("User not found", "danger")
+            flash(message, "danger")
             return redirect(url_for("login"))
 
-    # Check if the user still needs verification (optional but good practice)
-    if not session.get("needs_verification"):
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            # User is already verified, no need to resend
-            return jsonify({"success": True, "message": "Email already verified."}), 200
+    # Check if the user actually needs verification
+    # Allow resend even if session['needs_verification'] is somehow False but user.is_verified is False
+    if user.is_verified:
+        message = "Your email is already verified."
+        if is_ajax:
+            return (
+                jsonify({"success": True, "message": message}),
+                200,
+            )  # 200 OK, nothing to do
         else:
-            # Redirect verified users away from verify page if they land here somehow
-            flash("Your email is already verified.", "info")
+            flash(message, "info")
+            # Redirect appropriately
             return redirect(
-                "http://127.0.0.1:7860"
-            )  # Or wherever verified users should go
+                url_for("adminDashboard") if user.is_admin else "http://localhost:7860/"
+            )
+
+    # Prevent spamming: Add rate limiting here if needed (e.g., check last resend time)
+    # Example: Check if code was generated less than 60 seconds ago
+    # if user.verification_code_expires and user.verification_code_expires > datetime.utcnow() + timedelta(minutes=9): # (10 min expiry - 1 min buffer)
+    #     message = "Please wait a minute before requesting another code."
+    #     if is_ajax:
+    #         return jsonify({"success": False, "message": message}), 429 # Too Many Requests
+    #     else:
+    #         flash(message, "warning")
+    #         return redirect(url_for("verify"))
 
     # Generate and send new verification code
     code = user.set_verification_code()
@@ -361,33 +426,25 @@ def resend_code():
 
     success = send_verification_code(user.email, code)
 
-    # Check if it's an AJAX request (sent by verify.js)
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        if success:
-            return jsonify(
-                {
-                    "success": True,
-                    "message": "Verification code resent. Please check your email.",
-                }
-            )
-        else:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "Failed to send verification code. Please try again.",
-                    }
-                ),
-                500,
-            )
+    if success:
+        # Ensure session reflects need for verification
+        session["needs_verification"] = True
+        message = "Verification code resent. Please check your email."
+        flash_category = "success"
+        status_code = 200
     else:
-        # Fallback for non-AJAX requests (shouldn't happen with current setup)
-        if success:
-            flash("Verification code resent. Please check your email.", "success")
-        else:
-            flash("Failed to send verification code. Please try again.", "danger")
-        # Still redirect for non-AJAX
-        return redirect(url_for("verify"))
+        app.logger.error(f"Failed to resend verification email to {user.email}")
+        message = "Failed to send verification code. Please try again later or contact support."
+        flash_category = "danger"
+        status_code = 500  # Internal Server Error
+
+    if is_ajax:
+        return jsonify({"success": success, "message": message}), status_code
+    else:
+        flash(message, flash_category)
+        return redirect(
+            url_for("verify")
+        )  # Always redirect back to verify page for non-AJAX
 
 
 # Generate a secure token for password reset
@@ -413,56 +470,91 @@ def forgot_password():
     if request.method == "POST":
         email = request.form.get("email")
 
+        if not email:
+            flash("Email address is required.", "danger")
+            return render_template("forgot_password.html")
+
+        # Basic email format check (optional, browser validation is often sufficient)
+        # if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        #     flash("Invalid email format.", "danger")
+        #     return render_template("forgot_password.html")
+
         # Check if email exists
         user = User.query.filter_by(email=email).first()
-        if not user:
-            flash(
-                "If this email is registered, you will receive a password reset link.",
-                "info",
-            )
-            return redirect(url_for("login"))
 
-        # Generate token
-        token = generate_reset_token(user.email)
-        reset_url = url_for("reset_password", token=token, _external=True)
+        # Security: Always show the same message regardless of whether the email exists
+        # This prevents attackers from confirming which emails are registered.
+        flash_message = (
+            "If an account with that email exists, a password reset link has been sent."
+        )
 
-        # Email subject and body
-        subject = "Password Reset Request"
-        body = f"""
+        if user:
+            try:
+                # Generate token
+                token = generate_reset_token(user.email)
+                reset_url = url_for("reset_password", token=token, _external=True)
+
+                # Email subject and body
+                subject = "Password Reset Request - FHE Health Prediction"
+                # Use a more robust email template system in production (e.g., Jinja templates)
+                body = f"""
 Hello {user.username},
 
-To reset your password, please visit the following link:
+You requested a password reset for your account on the FHE Health Prediction platform.
+
+Please click the link below to set a new password:
 {reset_url}
 
-This link will expire in 1 hour.
+This link is valid for 1 hour.
 
-If you did not request a password reset, please ignore this email.
+If you did not request this, please ignore this email. Your password will remain unchanged.
 
 Regards,
-FHE Health Prediction Team
-        """
+The FHE Health Prediction Team
+                """
 
-        # Send email
-        if send_email(user.email, subject, body):
-            flash(
-                "If this email is registered, you will receive a password reset link.",
-                "info",
-            )
-        else:
-            flash("Error sending reset email. Please try again later.", "danger")
+                # Send email
+                if not send_email(user.email, subject, body):
+                    app.logger.error(
+                        f"Failed to send password reset email to {user.email}"
+                    )
+                    # Don't reveal the error to the user for security
+                    # flash("Error sending reset email. Please try again later.", "danger")
 
+            except Exception as e:
+                app.logger.error(
+                    f"Error generating reset token or sending email for {email}: {e}"
+                )
+                # Don't reveal the error
+
+        # Always show the generic message and redirect to login
+        flash(flash_message, "info")
         return redirect(url_for("login"))
 
+    # For GET request
     return render_template("forgot_password.html")
 
 
 @app.route("/reset-password/<token>", methods=["GET", "POST"])
 def reset_password(token):
-    # Verify token
-    email = confirm_reset_token(token)
+    # Verify token first for both GET and POST
+    email = confirm_reset_token(token)  # Default expiration is 1 hour (3600s)
     if not email:
-        flash("The password reset link is invalid or has expired.", "danger")
+        flash(
+            "The password reset link is invalid or has expired. Please request a new one.",
+            "danger",
+        )
         return redirect(url_for("forgot_password"))
+
+    user = User.query.filter_by(email=email).first()
+    # If the user associated with the email was deleted after token generation
+    if not user:
+        flash("User associated with this reset link no longer exists.", "danger")
+        return redirect(url_for("login"))
+    # If user is banned, maybe prevent password reset? (Optional)
+    # if user.is_banned:
+    #     flash("Cannot reset password for a banned account.", "danger")
+    #     return redirect(url_for("login"))
 
     if request.method == "POST":
         password = request.form.get("password")
@@ -470,73 +562,217 @@ def reset_password(token):
 
         # Validate passwords
         if not password or not confirm_password:
-            flash("Both fields are required", "danger")
-            return redirect(url_for("reset_password", token=token))
+            flash("Both password fields are required", "danger")
+            # Return the render_template to show the form again with the error
+            return render_template("reset_password.html", token=token)
 
         if password != confirm_password:
-            flash("Passwords don't match", "danger")
-            return redirect(url_for("reset_password", token=token))
+            flash("Passwords do not match", "danger")
+            return render_template("reset_password.html", token=token)
 
-        # Find user and update password
-        user = User.query.filter_by(email=email).first()
-        if user:
-            user.password = generate_password_hash(password)
+        # Add password complexity requirements here if desired
+        # e.g., if len(password) < 8: flash(...) return render_template(...)
+
+        try:
+            # Update password - use password_hash attribute
+            user.password_hash = generate_password_hash(password)
+            # Invalidate the reset token implicitly by changing the password hash
+            # Optionally, clear verification codes if you want them to re-verify after reset
+            # user.verification_code = None
+            # user.verification_code_expires = None
+            # user.is_verified = False # If you want re-verification
             db.session.commit()
-            flash("Your password has been updated! You can now log in.", "success")
+            flash(
+                "Your password has been updated successfully! You can now log in with your new password.",
+                "success",
+            )
             return redirect(url_for("login"))
-        else:
-            flash("User not found", "danger")
-            return redirect(url_for("login"))
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error updating password for {email}: {e}")
+            flash(
+                "An error occurred while updating your password. Please try again.",
+                "danger",
+            )
+            return render_template("reset_password.html", token=token)
 
+    # For GET request, just show the form
     return render_template("reset_password.html", token=token)
 
 
 # Update the before_request function to handle verification
-def before_request():
+@app.before_request
+def before_request_checks():
+    # Check if user is banned
     if "user_id" in session:
-        # Check if user is banned
+        # Use db.session.get for potentially better caching/identity map usage
         user = db.session.get(User, session["user_id"])
+        # Make sure user object exists before accessing attributes
         if user and user.is_banned:
             session.clear()
             flash("Your account has been banned", "danger")
-            return redirect(url_for("login"))
+            # Use abort(403) or redirect depending on context, redirect is safer for UX
+            # Using redirect here as it's consistent with other checks
+            return redirect(url_for("login"))  # Or perhaps a dedicated 'banned' page
 
-        # Check if user needs verification
-        if session.get("needs_verification") and request.endpoint not in [
-            "verify",
-            "resend_code",
-            "logout",
-            "static",
-        ]:
+    # Check if user needs verification, avoiding infinite loops
+    if "user_id" in session and session.get("needs_verification"):
+        # Allow access to verification-related routes and static files
+        allowed_endpoints = ["verify", "resend_code", "logout", "static", "login"]
+        if request.endpoint not in allowed_endpoints:
             flash("Please verify your email to continue", "warning")
             return redirect(url_for("verify"))
+    # No return needed here if checks pass
 
 
 # Admin routes
 @app.route("/admin")
 @admin_required
 def adminDashboard():
-    users = User.query.filter(User.username != "admin").all()
+    # Exclude the logged-in admin from the list shown? Usually not needed.
+    # If you want to exclude the *main* admin ('admin'), filter it out.
+    users = (
+        User.query.filter(User.username != "admin")
+        .order_by(User.created_at.desc())
+        .all()
+    )
+    # Alternatively, show all users including the current admin:
+    # users = User.query.order_by(User.created_at.desc()).all()
     return render_template("admin/adminDashboard.html", users=users)
 
 
 @app.route("/admin/ban/<int:user_id>", methods=["POST"])
 @admin_required
 def ban_user(user_id):
-    user = User.query.get_or_404(user_id)
+    user_to_ban = User.query.get_or_404(user_id)
+    current_admin = db.session.get(User, session["user_id"])  # Get the current admin
 
-    if user.username == "admin":
-        flash("Cannot ban admin user", "danger")
+    # Prevent banning the main 'admin' user
+    if user_to_ban.username == "admin":
+        flash("The primary admin account cannot be banned.", "danger")
         return redirect(url_for("adminDashboard"))
 
-    user.is_banned = not user.is_banned
+    # Prevent admins from banning themselves (optional but good practice)
+    if user_to_ban.id == current_admin.id:
+        flash("You cannot ban yourself.", "danger")
+        return redirect(url_for("adminDashboard"))
+
+    # Prevent admins from banning other admins (optional security rule)
+    # if user_to_ban.is_admin:
+    #     flash("Admins cannot ban other admins.", "danger")
+    #     return redirect(url_for("adminDashboard"))
+
+    user_to_ban.is_banned = not user_to_ban.is_banned
+    action = "banned" if user_to_ban.is_banned else "unbanned"
 
     try:
         db.session.commit()
-        status = "banned" if user.is_banned else "unbanned"
-        flash(f"User {user.username} has been {status}", "success")
+        flash(
+            f"User '{user_to_ban.username}' has been successfully {action}.", "success"
+        )
     except Exception as e:
-        flash("An error occurred", "danger")
+        db.session.rollback()
+        app.logger.error(f"Error changing ban status for user {user_id}: {e}")
+        flash(f"An error occurred while trying to {action} the user.", "danger")
+
+    return redirect(url_for("adminDashboard"))
+
+
+@app.route("/admin/download-users")
+@admin_required
+def download_users():
+    """Generate and download a CSV file with all users' information."""
+    try:
+        # Create a StringIO object to hold the CSV data in memory
+        csv_data = StringIO()
+        # Use DictWriter for easier header mapping and row writing
+        fieldnames = [
+            "ID",
+            "Username",
+            "Email",
+            "Created At",
+            "Is Banned",
+            "Is Admin",
+            "Is Verified",
+        ]
+        csv_writer = csv.DictWriter(csv_data, fieldnames=fieldnames)
+
+        # Write the header row
+        csv_writer.writeheader()
+
+        # Get all users (or filter as needed, e.g., exclude primary admin)
+        # users = User.query.filter(User.username != 'admin').all()
+        users = User.query.all()  # Include all users in the download
+
+        # Write user data
+        for user in users:
+            csv_writer.writerow(
+                {
+                    "ID": user.id,
+                    "Username": user.username,
+                    "Email": user.email,
+                    "Created At": (
+                        user.created_at.strftime("%Y-%m-%d %H:%M:%S")
+                        if user.created_at
+                        else "N/A"
+                    ),
+                    "Is Banned": "Yes" if user.is_banned else "No",
+                    "Is Admin": "Yes" if user.is_admin else "No",
+                    "Is Verified": "Yes" if user.is_verified else "No",
+                }
+            )
+
+        # Get the CSV data as a string
+        output = csv_data.getvalue()
+        csv_data.close()  # Close the StringIO object
+
+        # Create a response with the CSV data
+        response = make_response(output)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        response.headers["Content-Disposition"] = (
+            f"attachment; filename=users_{timestamp}.csv"
+        )
+        response.headers["Content-Type"] = "text/csv"
+
+        return response
+
+    except Exception as e:
+        app.logger.error(f"Error generating user CSV download: {e}")
+        flash("Failed to generate user download. Please check logs.", "danger")
+        return redirect(url_for("adminDashboard"))
+
+
+@app.route("/admin/toggle-admin/<int:user_id>", methods=["POST"])
+@admin_required
+def toggle_admin(user_id):
+    """Toggle admin privileges for a user."""
+    user_to_toggle = User.query.get_or_404(user_id)
+    current_admin = db.session.get(User, session["user_id"])
+
+    # Prevent modifying the primary 'admin' user's status
+    if user_to_toggle.username == "admin":
+        flash("Cannot modify privileges for the primary admin user.", "danger")
+        return redirect(url_for("adminDashboard"))
+
+    # Prevent admins from revoking their own privileges (optional but safer)
+    if user_to_toggle.id == current_admin.id:
+        flash("You cannot change your own admin status.", "danger")
+        return redirect(url_for("adminDashboard"))
+
+    # Toggle admin status
+    user_to_toggle.is_admin = not user_to_toggle.is_admin
+    action = "granted" if user_to_toggle.is_admin else "revoked"
+
+    try:
+        db.session.commit()
+        flash(
+            f"Admin privileges {action} for user '{user_to_toggle.username}'.",
+            "success",
+        )
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error toggling admin status for user {user_id}: {e}")
+        flash(f"An error occurred while changing admin status: {str(e)}", "danger")
 
     return redirect(url_for("adminDashboard"))
 
@@ -544,17 +780,37 @@ def ban_user(user_id):
 # API routes for validation
 @app.route("/api/check-username", methods=["POST"])
 def check_username():
-    username = request.json.get("username", "")
-    user = User.query.filter_by(username=username).first()
-    return jsonify({"available": not user})
+    username = request.json.get("username", "").strip()
+    if not username:
+        # Return available: false if username is empty or whitespace only
+        return jsonify({"available": False, "message": "Username cannot be empty."})
+
+    # Consider adding username format validation here (length, allowed characters)
+
+    user = User.query.filter(
+        User.username.ilike(username)
+    ).first()  # Case-insensitive check
+    is_available = not user
+    message = "Username available." if is_available else "Username is already taken."
+    return jsonify({"available": is_available, "message": message})
 
 
 @app.route("/logout")
 def logout():
-    session.pop("user_id", None)
-    flash("You have been logged out", "info")
+    session.clear()  # Clear the entire session
+    flash("You have been logged out successfully.", "info")
     return redirect(url_for("login"))
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Ensure logging is configured
+    import logging
+
+    logging.basicConfig(level=logging.INFO)  # Use INFO or DEBUG
+    # Consider adding file logging for production
+    # from logging.handlers import RotatingFileHandler
+    # handler = RotatingFileHandler('app.log', maxBytes=100000, backupCount=3)
+    # handler.setLevel(logging.INFO)
+    # app.logger.addHandler(handler)
+
+    app.run(debug=True)  # debug=True is okay for development
