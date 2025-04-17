@@ -282,7 +282,7 @@ def login():
 def verify():
     # Check if user is in session and needs verification
     if "user_id" not in session or not session.get("needs_verification"):
-        return redirect(url_for("index"))
+        return redirect(url_for("login"))
 
     user = db.session.get(User, session["user_id"])
     if not user:

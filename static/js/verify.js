@@ -137,15 +137,122 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Handle resend code form - let server handle everything
+    // Handle resend code button - AJAX implementation
     if (resendForm) {
-        resendForm.addEventListener('submit', function () {
-            // Show loading state on button during form submission
+        resendForm.addEventListener('submit', function (e) {
+            e.preventDefault(); // Prevent normal form submission
+
+            // Show loading state on button
             const resendButton = document.getElementById('resend-button');
             resendButton.classList.add('btn-loading');
             resendButton.disabled = true;
 
-            // Don't need to prevent default - let the form submit normally
-            // The server will handle resending the code
+            // Send AJAX request to resend code
+            fetch('/resend-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams(new FormData(resendForm))
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Create flash message
+                    const flashContainer = document.getElementById('flash-messages');
+                    const messageElement = document.createElement('div');
+
+                    if (data.success) {
+                        messageElement.className = 'flash-message success';
+                        messageElement.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span class="flash-content">${data.message || 'Verification code resent successfully!'}</span>
+                        <svg class="close-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    `;
+
+                        // Reset OTP inputs and focus first one
+                        otpInputs.forEach(input => {
+                            input.value = '';
+                            input.disabled = false;
+                        });
+                        mainCodeInput.value = '';
+                        otpInputs[0].focus();
+
+                        // Restart countdown
+                        startCountdown();
+                    } else {
+                        messageElement.className = 'flash-message error';
+                        messageElement.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span class="flash-content">${data.message || 'Failed to resend verification code. Please try again.'}</span>
+                        <svg class="close-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    `;
+                    }
+
+                    flashContainer.appendChild(messageElement);
+
+                    // Add click handler for the close button
+                    const closeBtn = messageElement.querySelector('.close-btn');
+                    closeBtn.addEventListener('click', () => {
+                        messageElement.style.opacity = '0';
+                        setTimeout(() => {
+                            if (flashContainer.contains(messageElement)) {
+                                flashContainer.removeChild(messageElement);
+                            }
+                        }, 300);
+                    });
+
+                    // Auto-dismiss after 4 seconds
+                    setTimeout(() => {
+                        messageElement.style.opacity = '0';
+                        setTimeout(() => {
+                            if (flashContainer.contains(messageElement)) {
+                                flashContainer.removeChild(messageElement);
+                            }
+                        }, 300);
+                    }, 4000);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const flashContainer = document.getElementById('flash-messages');
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'flash-message error';
+                    messageElement.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span class="flash-content">An error occurred. Please try again.</span>
+                    <svg class="close-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                `;
+                    flashContainer.appendChild(messageElement);
+                })
+                .finally(() => {
+                    // Reset button state
+                    resendButton.classList.remove('btn-loading');
+                    resendButton.disabled = false;
+                });
         });
     }
 
@@ -176,50 +283,4 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 4000);
     });
 
-    // Alternative OTP input visualization (optional enhancement)
-    function createOtpDigitDisplay() {
-        const otpContainer = document.createElement('div');
-        otpContainer.className = 'otp-digits';
-
-        // Create 6 digit boxes
-        for (let i = 0; i < 6; i++) {
-            const digitBox = document.createElement('div');
-            digitBox.className = 'otp-digit';
-            digitBox.setAttribute('data-index', i);
-            otpContainer.appendChild(digitBox);
-        }
-
-        // Insert after the input
-        const inputWrapper = codeInput.parentElement;
-        inputWrapper.parentNode.insertBefore(otpContainer, inputWrapper.nextSibling);
-
-        // Update the digit display when input changes
-        codeInput.addEventListener('input', function () {
-            const digits = document.querySelectorAll('.otp-digit');
-            const value = this.value;
-
-            digits.forEach((digit, index) => {
-                if (index < value.length) {
-                    digit.textContent = value[index];
-                    digit.classList.add('filled');
-                } else {
-                    digit.textContent = '';
-                    digit.classList.remove('filled');
-                }
-
-                digit.classList.remove('active');
-                if (index === value.length) {
-                    digit.classList.add('active');
-                }
-            });
-        });
-
-        // Handle clicks on digit boxes to focus the input
-        otpContainer.addEventListener('click', function () {
-            codeInput.focus();
-        });
-    }
-
-    // Uncomment to enable the visual OTP digit display
-    // createOtpDigitDisplay();
 });
