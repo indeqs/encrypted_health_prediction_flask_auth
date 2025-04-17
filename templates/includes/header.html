@@ -7,9 +7,11 @@
         </div>
         <nav class="main-nav">
             <ul>
-                <li><a href="{{ url_for('home') }}">Home</a></li>
-                
-                <li><a href="{{ url_for('contact') }}" class="active">Contact</a></li>
+                <li><a href="{{ url_for('home') }}" {% if request.endpoint=='home' %}class="active" {% endif %}>Home</a>
+                </li>
+                <li><a href="{{ url_for('contact') }}" {% if request.endpoint=='contact' %}class="active" {% endif
+                        %}>Contact</a></li>
+                <!-- Add other nav links as needed -->
             </ul>
         </nav>
         <div class="nav-buttons">
