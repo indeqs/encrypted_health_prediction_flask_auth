@@ -1,3 +1,4 @@
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -803,8 +804,6 @@ def logout():
 
 
 if __name__ == "__main__":
-    # Ensure logging is configured
-    import logging
 
     logging.basicConfig(level=logging.INFO)  # Use INFO or DEBUG
     # Consider adding file logging for production
