@@ -77,22 +77,29 @@ document.addEventListener('DOMContentLoaded', function () {
         codeInput.disabled = true;
 
         // Add click handler for the close button
+        addFlashMessageHandlers(messageElement);
+    }
+
+    // Helper function to add dismiss handlers to flash messages
+    function addFlashMessageHandlers(messageElement) {
         const closeBtn = messageElement.querySelector('.close-btn');
-        closeBtn.addEventListener('click', () => {
-            messageElement.style.opacity = '0';
-            setTimeout(() => {
-                if (flashContainer.contains(messageElement)) {
-                    flashContainer.removeChild(messageElement);
-                }
-            }, 300);
-        });
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                messageElement.style.opacity = '0';
+                setTimeout(() => {
+                    if (messageElement.parentElement && messageElement.parentElement.contains(messageElement)) {
+                        messageElement.parentElement.removeChild(messageElement);
+                    }
+                }, 300);
+            });
+        }
 
         // Auto-dismiss after 4 seconds
         setTimeout(() => {
             messageElement.style.opacity = '0';
             setTimeout(() => {
-                if (flashContainer.contains(messageElement)) {
-                    flashContainer.removeChild(messageElement);
+                if (messageElement.parentElement && messageElement.parentElement.contains(messageElement)) {
+                    messageElement.parentElement.removeChild(messageElement);
                 }
             }, 300);
         }, 4000);
@@ -120,6 +127,9 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (this.value.length === 6) {
                 codeMessage.textContent = '';
                 this.classList.add('is-valid');
+
+                // Auto-submit the form when 6 digits are entered
+                verifyForm.submit();
             }
         });
     }
@@ -136,10 +146,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Handle resend code form submission - let server handle everything
     if (resendForm) {
-        resendForm.addEventListener('submit', function () {
+        resendForm.addEventListener('submit', function (e) {
             // Show loading state on button during form submission
             const resendButton = document.getElementById('resend-button');
             resendButton.classList.add('btn-loading');
+
+            // Ensure the action URL is correct
+            resendForm.action = "/resend-code";  // Make sure this matches the app.py route
+
             // Let the form submit normally - server will handle resending and flashing messages
         });
     }
@@ -147,27 +161,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // Check if we have server-side flash messages to display
     const serverFlashMessages = document.querySelectorAll('.flash-message');
     serverFlashMessages.forEach(message => {
-        // Add close button functionality to server-generated flash messages
-        const closeBtn = message.querySelector('.close-btn');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                message.style.opacity = '0';
-                setTimeout(() => {
-                    if (message.parentElement.contains(message)) {
-                        message.parentElement.removeChild(message);
-                    }
-                }, 300);
-            });
-        }
-
-        // Auto-dismiss after 4 seconds
-        setTimeout(() => {
-            message.style.opacity = '0';
-            setTimeout(() => {
-                if (message.parentElement && message.parentElement.contains(message)) {
-                    message.parentElement.removeChild(message);
-                }
-            }, 300);
-        }, 4000);
+        addFlashMessageHandlers(message);
     });
 });
