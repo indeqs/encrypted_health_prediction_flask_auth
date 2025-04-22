@@ -129,12 +129,75 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user_id" not in session:
+            flash("Please log in to access this page", "warning")
+            return redirect(url_for("login"))
+
+        user = db.session.get(User, session["user_id"])
+        if not user or not user.is_admin:
+            flash("You do not have permission to access this page", "danger")
+            return redirect(url_for("home"))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
 @app.template_filter('nl2br')
 def nl2br_filter(s):
     """Convert newlines to <br> tags for proper display in HTML"""
     if s is None:
         return ""
-    return Markup(s.replace('\n', '<br>'))
+    s = str(s) if s is not None else ''
+    return Markup(s.replace('\n', '<br>\n'))
+
+@app.route("/admin/view_inquiry/<int:inquiry_id>")
+@admin_required # Ensure only admins can access this view
+def admin_view_inquiry(inquiry_id):
+    inquiry = db.session.query(Inquiry).options(db.joinedload(Inquiry.patient)).get_or_404(inquiry_id)
+    # Note: joinedload(Inquiry.patient) eagerly loads the related User (submitter) object
+    
+    # The submitter is inquiry.patient now because of the relationship and joinedload
+    submitter = inquiry.patient 
+    
+    if not submitter:
+         # Handle case where submitter might have been deleted (optional)
+         flash("Submitter user not found for this inquiry.", "warning")
+         # You might want to still display the inquiry details
+
+    return render_template(
+        "admin/viewInquiryAdmin.html", # Use a new template for admin view
+        inquiry=inquiry,
+        submitter=submitter # Pass the submitter object
+    )
+
+@app.route("/admin/update_inquiry_status/<int:inquiry_id>", methods=["POST"])
+@admin_required
+def admin_update_inquiry_status(inquiry_id):
+    inquiry = Inquiry.query.get_or_404(inquiry_id)
+    new_status = request.form.get("status")
+    
+    allowed_statuses = ["pending", "in_progress", "resolved", "closed", "on_hold"] # Admin might have more statuses
+    if new_status not in allowed_statuses:
+        flash("Invalid status value selected.", "danger")
+        return redirect(url_for("admin_view_inquiry", inquiry_id=inquiry_id))
+    
+    inquiry.status = new_status
+    inquiry.updated_at = datetime.utcnow() # Update timestamp
+    
+    try:
+        db.session.commit()
+        # Provide more descriptive status in flash message
+        status_display = new_status.replace('_', ' ').title()
+        flash(f"Inquiry status updated to '{status_display}'.", "success")
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Admin error updating inquiry {inquiry_id} status: {e}")
+        flash("An error occurred while updating the inquiry status.", "danger")
+    
+    return redirect(url_for("admin_view_inquiry", inquiry_id=inquiry_id))
+
 
 # Add this function somewhere near your route definitions
 def redirect_logged_in_user(user):
@@ -174,22 +237,6 @@ def login_required(f):
         if "user_id" not in session:
             flash("Please log in to access this page", "warning")
             return redirect(url_for("login"))
-        return f(*args, **kwargs)
-
-    return decorated_function
-
-
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user_id" not in session:
-            flash("Please log in to access this page", "warning")
-            return redirect(url_for("login"))
-
-        user = db.session.get(User, session["user_id"])
-        if not user or not user.is_admin:
-            flash("You do not have permission to access this page", "danger")
-            return redirect(url_for("index"))
         return f(*args, **kwargs)
 
     return decorated_function
@@ -715,16 +762,41 @@ def before_request_checks():
 @app.route("/admin")
 @admin_required
 def adminDashboard():
-    # Exclude the logged-in admin from the list shown? Usually not needed.
-    # If you want to exclude the *main* admin ('admin'), filter it out.
-    users = (
-        User.query.filter(User.username != "admin")
-        .order_by(User.created_at.desc())
+    # --- User Data (Existing) ---
+    # Fetch all users for stats and table (excluding primary admin from table display later)
+    all_users = User.query.order_by(User.created_at.desc()).all() 
+    
+    # --- Fetch Recent Inquiries (New) ---
+    # Get latest 10 inquiries regardless of who submitted them
+    recent_inquiries_data_admin = (
+        db.session.query(Inquiry, User.username)
+        .join(User, Inquiry.patient_id == User.id) # Join based on the submitter's ID
+        .order_by(Inquiry.created_at.desc())
+        .limit(10) # Show more inquiries for admin? Adjust as needed.
         .all()
     )
-    # Alternatively, show all users including the current admin:
-    # users = User.query.order_by(User.created_at.desc()).all()
-    return render_template("admin/adminDashboard.html", users=users)
+    # Reformat for template (similar to medic dashboard)
+    recent_inquiries_list_admin = [
+        {
+            "id": inquiry.id,
+            # 'patient_id' here refers to the ID of the user who submitted the inquiry
+            "patient_id": inquiry.patient_id, 
+            "name": patient_username,  # Submitter's username
+            "date": inquiry.created_at.strftime("%Y-%m-%d"), 
+            "subject": inquiry.subject,
+            "urgency": inquiry.urgency,
+            "status": inquiry.status,
+        }
+        for inquiry, patient_username in recent_inquiries_data_admin
+    ]
+
+    # --- Pass Data to Template ---
+    return render_template(
+        "admin/adminDashboard.html", 
+        users=all_users, # Pass the user list for stats and table
+        recent_inquiries_admin=recent_inquiries_list_admin # Pass the inquiries list
+        # Add other stats if needed
+    )
 
 
 # Decorators to ensure user is logged in and is a medic
@@ -956,10 +1028,136 @@ def medicFeedback():
     return render_template("medic/medicFeedback.html", user=user)
 
 
-@app.route("/admin-feedback", methods=["GET", "POST"])
+# Remove the @admin_required decorator if any logged-in user should access this form
+# If ONLY admins should access it, keep @admin_required
+# Assuming any logged-in user can submit feedback TO admin:
+@app.route("/adminFeedback", methods=["GET", "POST"])
+@login_required 
 def adminFeedback():
-    return render_template("admin/adminFeedback.html")
+    # Get the current logged-in user (could be patient, medic, or admin)
+    user = db.session.get(User, session["user_id"])
+    if not user:
+        flash("User session error. Please log in again.", "danger")
+        return redirect(url_for("login"))
 
+    if request.method == "POST":
+        # --- Process Form Submission ---
+        # Get data from the form
+        subject = request.form.get("subject")
+        message_text = request.form.get("message")
+        issue_type = request.form.get("issue_type") # Specific to admin form
+        browser_info = request.form.get("browser_info") # Specific to admin form
+        consent = request.form.get("privacy_consent")
+        
+        # Optional: get username from form if different from logged-in user needed
+        # submitted_username = request.form.get("username") 
+        
+        # --- Basic Server-Side Validation ---
+        # Use logged-in user's name/email, no need to validate form fields for those
+        # Validate fields specific to this form
+        if not subject or not message_text or not issue_type:
+            flash("Issue Type, Subject, and Message are required.", "danger")
+            # Re-render form, passing back submitted values (and user)
+            return render_template(
+                "admin/adminFeedback.html",
+                user=user,
+                form_subject=subject,
+                form_message=message_text,
+                form_issue_type=issue_type,
+                form_browser_info=browser_info,
+                # form_username=submitted_username # Pass back if needed
+            )
+
+        if not consent:
+            flash(
+                "You must consent to storing information to submit your request.",
+                "danger",
+            )
+            return render_template(
+                "admin/adminFeedback.html",
+                user=user,
+                form_subject=subject,
+                form_message=message_text,
+                form_issue_type=issue_type,
+                form_browser_info=browser_info,
+                # form_username=submitted_username
+            )
+
+        # --- Save to Database (Using Inquiry table for simplicity) ---
+        # Decide how to store this. Option: Use Inquiry table.
+        # We might need a way to distinguish admin feedback later if needed.
+        try:
+            # Add extra info into the message or subject? Or modify Inquiry model?
+            # For now, include extra info in the message body.
+            full_message = f"""Issue Type: {issue_type}
+Browser/Device Info: {browser_info if browser_info else 'Not Provided'}
+
+Message:
+{message_text}
+"""
+            
+            new_inquiry = Inquiry(
+                patient_id=user.id,  # ID of the user submitting the feedback
+                subject=f"Admin Support: {subject}", # Prepend subject for clarity
+                message=full_message, # Store combined message
+                # symptoms=None, # Not applicable for admin feedback
+                urgency='medium', # Default or map issue_type? Keep simple for now.
+                status='pending'  # Default status for new inquiries
+            )
+
+            db.session.add(new_inquiry)
+            db.session.commit()
+
+            # Optional: Send email notification to the main admin email address
+            admin_contact_email = os.getenv("ADMIN_CONTACT_EMAIL", "admin@app.com")
+            if admin_contact_email:
+                email_subject = f"New Admin Support Request: {subject}"
+                email_body = f"""
+Support request received from:
+Username: {user.username}
+Email: {user.email}
+
+Subject: {subject}
+Issue Type: {issue_type}
+Browser/Device: {browser_info if browser_info else 'N/A'}
+
+Message:
+{message_text}
+
+---
+View in system if applicable (link pending implementation)
+"""
+                send_email(admin_contact_email, email_subject, email_body)
+
+
+            flash(
+                "Your support request has been submitted successfully. We will respond soon.",
+                "success",
+            )
+            # Redirect back to the same form page after success
+            return redirect(url_for("adminFeedback")) 
+
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error saving admin feedback from user {user.id}: {e}")
+            flash(
+                "An error occurred while submitting your request. Please try again.",
+                "danger",
+            )
+            # Re-render form with error state
+            return render_template(
+                 "admin/adminFeedback.html",
+                user=user,
+                form_subject=subject,
+                form_message=message_text,
+                form_issue_type=issue_type,
+                form_browser_info=browser_info,
+                # form_username=submitted_username
+            )
+
+    # --- Handle GET Request (Display the form) ---
+    # Pass the user object to pre-fill name/email/username
+    return render_template("admin/adminFeedback.html", user=user)
 
 @app.route("/admin/ban/<int:user_id>", methods=["POST"])
 @admin_required
