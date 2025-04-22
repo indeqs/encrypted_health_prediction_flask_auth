@@ -46,6 +46,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(20), default='patient', nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     is_banned = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -169,6 +170,8 @@ def signup():
         email = request.form.get("email")
         password = request.form.get("password")
         confirm_password = request.form.get("confirm_password")
+        role = request.form.get("role", "patient")
+
 
         # Validation
         if not all([username, email, password, confirm_password]):
@@ -177,6 +180,11 @@ def signup():
 
         if password != confirm_password:
             flash("Passwords do not match", "error")
+            return render_template("signup.html")
+        
+        # Validate role
+        if role not in ["patient", "medic"]:
+            flash("Invalid role selected", "error")
             return render_template("signup.html")
 
         # Check if user already exists
@@ -195,8 +203,12 @@ def signup():
             username=username,
             email=email,
             password_hash=generate_password_hash(password),
+            role=role,
             is_verified=False,
         )
+
+        if role == "admin":
+            pass
         try:
             db.session.add(new_user)
             db.session.commit()
