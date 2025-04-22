@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import csv
 from io import StringIO
+from markupsafe import Markup
 from flask import (
     Flask,
     render_template,
@@ -128,6 +129,12 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
 
+@app.template_filter('nl2br')
+def nl2br_filter(s):
+    """Convert newlines to <br> tags for proper display in HTML"""
+    if s is None:
+        return ""
+    return Markup(s.replace('\n', '<br>'))
 
 # Add this function somewhere near your route definitions
 def redirect_logged_in_user(user):
@@ -1110,47 +1117,51 @@ def check_username():
 
 @app.route("/view_inquiry/<int:inquiry_id>")
 @login_required
-# @medic_required # Decide if only medics can view
+@medic_required  # Ensure only medics can view inquiries
 def view_inquiry(inquiry_id):
-    # Fetch inquiry details later
-    return f"Viewing inquiry {inquiry_id} (Implementation Pending)"
+    # Get the inquiry by ID
+    inquiry = Inquiry.query.get_or_404(inquiry_id)
+    
+    # Get the patient information
+    patient = User.query.get_or_404(inquiry.patient_id)
+    
+    # Format dates for display
+    created_date = inquiry.created_at.strftime("%Y-%m-%d %H:%M")
+    updated_date = inquiry.updated_at.strftime("%Y-%m-%d %H:%M") if inquiry.updated_at else "N/A"
+    
+    # Render the inquiry view template
+    return render_template(
+        "medic/viewInquiry.html",
+        inquiry=inquiry,
+        patient=patient,
+        created_date=created_date,
+        updated_date=updated_date
+    )
 
-
-@app.route("/respond_inquiry/<int:inquiry_id>")
+@app.route("/update_inquiry_status/<int:inquiry_id>", methods=["POST"])
 @login_required
 @medic_required
-def respond_inquiry(inquiry_id):
-    # Add logic to respond/update inquiry status
-    return f"Responding to inquiry {inquiry_id} (Implementation Pending)"
-
-
-# Route might need GET/POST
-@app.route("/add_patient", methods=["GET", "POST"])
-@login_required
-@medic_required  # Or maybe admin? Decide who can add patients
-def add_patient():
-    # Display form to add a new patient user
-    return "Add patient page (Implementation Pending)"
-
-
-# medicFeedback route already exists
-
-
-# Route might need GET/POST depending on implementation
-@app.route("/export_data")
-@login_required
-@medic_required  # Or admin?
-def export_data():
-    # Logic to generate and return data export (e.g., CSV)
-    return "Export data page (Implementation Pending)"
-
-
-@app.route("/view_patient/<int:patient_id>")
-@login_required
-# @medic_required # Decide who can view patient details
-def view_patient(patient_id):
-    # Fetch and display patient details
-    return f"Viewing patient {patient_id} (Implementation Pending)"
+def update_inquiry_status(inquiry_id):
+    inquiry = Inquiry.query.get_or_404(inquiry_id)
+    new_status = request.form.get("status")
+    
+    # Validate status value
+    if new_status not in ["pending", "in_progress", "resolved"]:
+        flash("Invalid status value.", "danger")
+        return redirect(url_for("viewInquiry", inquiry_id=inquiry_id))
+    
+    inquiry.status = new_status
+    inquiry.updated_at = datetime.utcnow()  # Update the updated_at timestamp
+    
+    try:
+        db.session.commit()
+        flash(f"Inquiry status updated to {new_status.replace('_', ' ').title()}.", "success")
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error updating inquiry status: {e}")
+        flash("An error occurred while updating the status.", "danger")
+    
+    return redirect(url_for("view_inquiry", inquiry_id=inquiry_id))
 
 
 @app.route("/logout")

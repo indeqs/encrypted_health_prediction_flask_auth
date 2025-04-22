@@ -688,3 +688,175 @@ body {
         width: 80px;
     }
 }
+
+/* Inquiry Details Styling */
+.inquiry-details {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    overflow: hidden;
+}
+
+.breadcrumb {
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.breadcrumb a {
+    color: #4a6bff;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.inquiry-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.inquiry-info {
+    padding: 20px;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.info-group {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.info-group label {
+    width: 120px;
+    font-weight: 600;
+    color: #555;
+}
+
+.patient-link {
+    color: #4a6bff;
+    text-decoration: none;
+}
+
+.patient-link:hover {
+    text-decoration: underline;
+}
+
+.message-section {
+    padding: 20px;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.message-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 18px;
+}
+
+.message-content {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 6px;
+    line-height: 1.6;
+}
+
+.inquiry-actions {
+    padding: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-outline {
+    padding: 8px 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: #4a6bff;
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #3a5bff;
+}
+
+.btn-secondary {
+    background: #28a745;
+    color: white;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background: #218838;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #555;
+    border: 1px solid #ccc;
+}
+
+.btn-outline:hover {
+    background: #f1f1f1;
+}
+
+.inline-form {
+    display: inline;
+}
+
+/* Status badges */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.urgent {
+    background-color: #ff4d4f;
+    color: white;
+}
+
+.status-badge.normal {
+    background-color: #faad14;
+    color: white;
+}
+
+.status-badge.low {
+    background-color: #52c41a;
+    color: white;
+}
+
+.status-badge.pending {
+    background-color: #faad14;
+    color: white;
+}
+
+.status-badge.success {
+    background-color: #52c41a;
+    color: white;
+}
+
+.status-badge.warning {
+    background-color: #ff7875;
+    color: white;
+}
+
+.status-badge.in-progress {
+    background-color: #1890ff;
+    color: white;
+}

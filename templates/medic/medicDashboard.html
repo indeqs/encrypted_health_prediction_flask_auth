@@ -6,7 +6,7 @@
 <div class="dashboard-container">
     <div class="dashboard-header">
         <h1>Medic Dashboard</h1>
-        <p class="subtitle">Manage patient inquiries and review health predictions</p>
+        <p class="subtitle">Manage patient inquiries</p>
         <div class="user-info">
             <span class="welcome-text">Welcome, Dr. {{ current_user.username }}</span>
             <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
@@ -14,7 +14,6 @@
     </div>
 
     <div class="dashboard-stats">
-        <!-- Stat Cards remain the same -->
         <div class="stat-card">
             <div class="stat-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -25,7 +24,6 @@
             </div>
             <div class="stat-details">
                 <h3>Total Patients</h3>
-                {# Use unique IDs if planning to update via AJAX as in the JS example #}
                 <p class="stat-number" id="total-patients-count">{{ total_patients }}</p>
             </div>
         </div>
@@ -41,7 +39,6 @@
                 <h3>New Inquiries</h3>
                 <p class="stat-number" id="new-inquiries-count">{{ new_inquiries }}</p>
             </div>
-        </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon">
@@ -61,7 +58,6 @@
     </div>
 
     <div class="dashboard-content">
-        <!-- Recent Inquiries Section (unchanged) -->
         <div class="dashboard-card recent-inquiries">
             <div class="card-header">
                 <h2>Recent Medical Inquiries</h2>
@@ -110,15 +106,6 @@
                                             <circle cx="12" cy="12" r="3"></circle>
                                         </svg>
                                     </a>
-                                    <a href="{{ url_for('respond_inquiry', inquiry_id=inquiry.id) }}" class="btn-edit"
-                                        title="Respond">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                        </svg>
-                                    </a>
                                 </div>
                             </td>
                         </tr>
@@ -131,111 +118,8 @@
                 </table>
             </div>
         </div>
-        
-        <!-- Quick Actions and Activity Graph -->
-        <div class="dashboard-flex-row">
-            <!-- Quick Actions (unchanged) -->
-            <div class="dashboard-card quick-actions">
-                <h2>Quick Actions</h2>
-                    <a href="{{ url_for('add_patient') }}" class="action-button">
-                        <div class="action-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="8.5" cy="7" r="4"></circle>
-                                <line x1="20" y1="8" x2="20" y2="14"></line>
-                                <line x1="23" y1="11" x2="17" y2="11"></line>
-                            </svg>
-                        </div>
-                        <span>Add Patient</span>
-                    </a>
-                    <a href="{{ url_for('medicFeedback') }}" class="action-button">
-                        <div class="action-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                            </svg>
-                        </div>
-                        <span>Messages</span>
-                    </a>
-                    <a href="{{ url_for('export_data') }}" class="action-button">
-                        <div class="action-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                        </div>
-                        <span>Export Data</span>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Activity Graph -->
-            <div class="dashboard-card activity-graph">
-                <h2>Monthly Activity</h2>
-                <div class="graph-container">
-                    {# Pass data to JS via data attributes. Use 'tojson' and 'e' (escape) filters #}
-                    <canvas id="activityChart" data-labels="{{ activity_labels | tojson | e }}"
-                        data-inquiries="{{ inquiry_data | tojson | e }}"
-                    </canvas>
-                    {# Inline script removed #}
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Patients (unchanged) -->
-        <div class="dashboard-card recent-patients">
-            <div class="card-header">
-                <h2>Recent Patients</h2>
-                <a href="#" class="view-all">View All Patients</a>
-            </div>
-            <div class="patient-cards">
-                {% for patient in recent_patients %}
-                <div class="patient-card">
-                    <div class="patient-avatar">
-                        <div class="avatar-placeholder">{{ patient.name[0] | upper }}</div> {# Added upper for
-                        consistency #}
-                    </div>
-                    <div class="patient-info">
-                        <h3>{{ patient.name }}</h3>
-                        <p class="patient-id">ID: {{ patient.id }}</p>
-                        <p class="patient-details">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path
-                                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
-                                </path>
-                            </svg>
-                            Predictions: {{ patient.prediction_count }}
-                        </p>
-                    </div>
-                    <div class="patient-actions">
-                        <a href="{{ url_for('view_patient', patient_id=patient.id) }}" class="btn-view"
-                            title="View Patient">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-                {% else %}
-                <p class="text-center">No recent patients found.</p>
-                {% endfor %}
-            </div>
-        </div>
     </div>
 </div>
 
-{# Load Chart.js library #}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='js/medic_dashboard.js') }}"></script>
 {% endblock %}
