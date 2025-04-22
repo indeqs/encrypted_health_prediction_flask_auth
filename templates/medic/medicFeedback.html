@@ -28,7 +28,8 @@
                                 <circle cx="12" cy="7" r="4"></circle>
                             </svg>
                         </div>
-                        <input type="text" id="name" name="name" required placeholder="John Doe">
+                        <input type="text" id="name" name="name" required placeholder="John Doe"
+                            value="{{ user.username if user else '' }}" readonly>
                     </div>
                 </div>
 
@@ -44,23 +45,8 @@
                                 <polyline points="22,6 12,13 2,6"></polyline>
                             </svg>
                         </div>
-                        <input type="email" id="email" name="email" required placeholder="johndoe@example.com">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="prediction_id">Prediction ID (if applicable)</label>
-                    <div class="input-with-icon">
-                        <div class="input-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                                <line x1="4" y1="22" x2="4" y2="15"></line>
-                            </svg>
-                        </div>
-                        <input type="text" id="prediction_id" name="prediction_id"
-                            placeholder="(Optional) Enter if related to a specific health prediction">
+                        <input type="email" id="email" name="email" required placeholder="johndoe@example.com"
+                            value="{{ user.email if user else '' }}" readonly>
                     </div>
                 </div>
 
@@ -76,39 +62,43 @@
                             </svg>
                         </div>
                         <input type="text" id="subject" name="subject" required
-                            placeholder="Question about my health prediction">
+                            placeholder="Question about my health prediction"
+                            value="{{ form_subject if form_subject }}">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="symptoms">Current Symptoms (Optional)</label>
                     <textarea id="symptoms" name="symptoms" rows="3"
-                        placeholder="Please describe any symptoms you're experiencing..."></textarea>
+                        placeholder="Please describe any symptoms you're experiencing...">{{ form_symptoms if form_symptoms }}</textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="message">Medical Question</label>
                     <textarea id="message" name="message" rows="5" required
-                        placeholder="I'd like to ask about the prediction for my symptoms..."></textarea>
+                        placeholder="I'd like to ask about the prediction for my symptoms...">{{ form_message if form_message }}</textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="urgency">How urgent is your question?</label>
+                    {# Add selected logic if repopulating after error #}
                     <select id="urgency" name="urgency">
-                        <option value="low">Not urgent - General information only</option>
-                        <option value="medium">Somewhat urgent - Looking for clarification</option>
-                        <option value="high">Urgent - Need more immediate response</option>
+                        <option value="low" {{ 'selected' if form_urgency=='low' }}>Not urgent - General information
+                            only</option>
+                        <option value="medium" {{ 'selected' if form_urgency=='medium' or not form_urgency }}>Somewhat
+                            urgent - Looking for clarification</option>
+                        <option value="high" {{ 'selected' if form_urgency=='high' }}>Urgent - Need more immediate
+                            response</option>
                     </select>
                     <p class="note"><strong>Note:</strong> For medical emergencies, please call emergency services
                         immediately.</p>
                 </div>
 
                 <div class="form-group privacy-consent">
-                    <input type="checkbox" id="privacy_consent" name="privacy_consent" required>
-                    <label for="privacy_consent">I consent to sharing my medical information with the FHE Health
-                        Prediction medical team for the purpose of answering my question. See our <a
-                            href="{{ url_for('privacy_policy') }}">Privacy Policy</a> to learn more about how we use
-                        data.</label>
+                    {# Keep checked state if repopulating after error #}
+                    <input type="checkbox" id="privacy_consent" name="privacy_consent" required {{ 'checked' if
+                        consent_error }}>
+                    <label for="privacy_consent">I consent to sharing my medical information...</label>
                 </div>
 
                 <button type="submit" class="btn-primary">Submit Medical Question</button>

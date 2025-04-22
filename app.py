@@ -46,7 +46,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(20), default='patient', nullable=False)
+    role = db.Column(db.String(20), default="patient", nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     is_banned = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -84,6 +84,35 @@ class User(db.Model):
         return True
 
 
+class Inquiry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    subject = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=True)  # The main question
+    symptoms = db.Column(db.Text, nullable=True)  # Add this line for symptoms
+    urgency = db.Column(db.String(20), default="medium", nullable=False)
+    status = db.Column(db.String(20), default="pending", nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    # Foreign Keys
+    patient_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    # Optional: Track which medic is assigned or responded
+    # medic_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
+    # Relationships
+    patient = db.relationship(
+        "User",
+        backref=db.backref("patient_inquiries", lazy=True),
+        foreign_keys=[patient_id],
+    )
+    # medic = db.relationship('User', backref=db.backref('medic_inquiries', lazy=True), foreign_keys=[medic_id])
+
+    def __repr__(self):
+        return f"<Inquiry {self.id} - {self.subject}>"
+
+
 # Create all database tables
 with app.app_context():
     db.create_all()
@@ -98,6 +127,37 @@ with app.app_context():
         )
         db.session.add(admin)
         db.session.commit()
+
+
+# Add this function somewhere near your route definitions
+def redirect_logged_in_user(user):
+    """Redirects a logged-in and verified user based on their role."""
+    if not user:  # Should not happen if called correctly, but safe check
+        return redirect(url_for("login"))
+
+    if user.is_admin:
+        # Admins go to admin dashboard
+        flash(
+            f"Welcome back, Admin {user.username}!", "success"
+        )  # Optional: Flash message here or in calling route
+        return redirect(url_for("adminDashboard"))
+    elif user.role == "medic":
+        # Medics go to medic dashboard
+        flash(
+            f"Welcome back, Dr. {user.username}!", "success"
+        )  # Customize welcome message
+        return redirect(url_for("medicDashboard"))
+    elif user.role == "patient":
+        # Patients go to the external app
+        flash(f"Welcome back, {user.username}!", "success")
+        return redirect("http://localhost:7860/")
+    else:
+        # Fallback for unknown roles (maybe log this)
+        app.logger.warning(
+            f"User {user.username} (ID: {user.id}) has unknown role: {user.role}. Redirecting home."
+        )
+        flash(f"Welcome back, {user.username}!", "info")
+        return redirect(url_for("home"))  # Or maybe login?
 
 
 # Authentication decorators
@@ -149,16 +209,21 @@ def home():
     if "user_id" in session:
         user = db.session.get(User, session["user_id"])
         if user:
-            if user.is_admin:
-                # Don't redirect admin from here, maybe they want to see the public home?
-                # Or redirect to admin dashboard: return redirect(url_for('adminDashboard'))
-                pass  # Let admin see the public home page if they navigate here
-            elif user.is_verified:
-                # Redirect verified non-admin users to their main app
-                return redirect("http://localhost:7860/")
-            else:
-                # Redirect unverified users to verification
+            if not user.is_verified:
+                session["needs_verification"] = True
                 return redirect(url_for("verify"))
+            else:
+                return redirect_logged_in_user(user)
+            # if user.is_admin:
+            #     # Don't redirect admin from here, maybe they want to see the public home?
+            #     # Or redirect to admin dashboard: return redirect(url_for('adminDashboard'))
+            #     pass  # Let admin see the public home page if they navigate here
+            # elif user.is_verified:
+            #     # Redirect verified non-admin users to their main app
+            #     return redirect("http://localhost:7860/")
+            # else:
+            #     # Redirect unverified users to verification
+            #     return redirect(url_for("verify"))
     # Render home for logged-out users
     return render_template("index.html")
 
@@ -172,7 +237,6 @@ def signup():
         confirm_password = request.form.get("confirm_password")
         role = request.form.get("role", "patient")
 
-
         # Validation
         if not all([username, email, password, confirm_password]):
             flash("All fields are required", "error")
@@ -181,7 +245,7 @@ def signup():
         if password != confirm_password:
             flash("Passwords do not match", "error")
             return render_template("signup.html")
-        
+
         # Validate role
         if role not in ["patient", "medic"]:
             flash("Invalid role selected", "error")
@@ -256,26 +320,39 @@ def login():
         # Check user existence and password
         if not user or not check_password_hash(user.password_hash, password):
             flash("Invalid username or password", "danger")
-            return redirect(url_for("login"))
+            return redirect(url_for("login"))  # Redirect back to login on failure
 
         # Check if user is banned
         if user.is_banned:
             flash("Your account has been banned. Please contact support.", "danger")
-            return redirect(url_for("login"))
+            return redirect(url_for("login"))  # Redirect back to login if banned
 
         # User exists, password is correct, and not banned.
-        # Store user ID in session immediately.
         session["user_id"] = user.id
+        session["needs_verification"] = False  # Default assumption
 
-        # Check verification status
-        if not user.is_verified:
-            # Generate and send new verification code
+        # --- SPECIAL CASE: ADMIN LOGIN ---
+        # Check if the user has the is_admin flag set to True
+        if user.is_admin:
+            # Admin bypasses verification check entirely.
+            # No need to check user.is_verified for admin.
+            # Session flag 'needs_verification' is already False.
+            # Redirect directly using the helper function.
+            # The helper function will add the appropriate flash message.
+            # flash(f"Admin Login: Welcome {user.username}!", "success") # Message handled by helper
+            return redirect_logged_in_user(user)
+
+        # --- REGULAR USER LOGIN (NON-ADMIN) ---
+        # If the user is NOT an admin, proceed with verification check.
+        elif not user.is_verified:
+            # User is NOT admin and NOT verified - Initiate verification
             code = user.set_verification_code()
             db.session.commit()
 
             if send_verification_code(user.email, code):
-                # Mark session as needing verification
-                session["needs_verification"] = True
+                session["needs_verification"] = (
+                    True  # Set flag ONLY if verification is needed
+                )
                 flash(
                     "Your email is not verified. Please check your inbox for a verification code.",
                     "warning",
@@ -291,24 +368,14 @@ def login():
                     "Couldn't send verification email. Please try logging in again or contact support.",
                     "danger",
                 )
-                return redirect(url_for("login"))
+                return redirect(url_for("login"))  # Redirect back to login on failure
         else:
-            # User is verified, clear the verification flag if it exists
-            session["needs_verification"] = False
+            # User is NOT admin AND IS verified
+            # Session flag 'needs_verification' is already False.
+            # Redirect using the helper function.
+            return redirect_logged_in_user(user)
 
-            # *** <<< FIX FOR ISSUE 3 >>> ***
-            # Check if the verified user is an admin
-            if user.is_admin:
-                flash(f"Welcome back, Admin {user.username}!", "success")
-                return redirect(url_for("adminDashboard"))
-            else:
-                # Verified non-admin user
-                flash(f"Welcome back, {user.username}!", "success")
-                # Redirect normal users to the external URL
-                return redirect("http://localhost:7860/")
-            # *** <<< END FIX FOR ISSUE 3 >>> ***
-
-    # For GET request or if POST fails validation before checks
+    # For GET request or if POST fails initial validation
     return render_template("login.html")
 
 
@@ -358,13 +425,14 @@ def verify():
             session["needs_verification"] = False  # Update session state
 
             flash("Email verified successfully!", "success")
+            return redirect_logged_in_user(user)
 
             # Redirect based on user type AFTER successful verification
-            if user.is_admin:
-                return redirect(url_for("adminDashboard"))
-            else:
-                # Redirect normal users to external URL
-                return redirect("http://localhost:7860/")
+            # if user.is_admin:
+            #     return redirect(url_for("adminDashboard"))
+            # else:
+            #     # Redirect normal users to external URL
+            #     return redirect("http://localhost:7860/")
         else:
             # Check if the code might have expired
             expired = (
@@ -419,9 +487,7 @@ def resend_code():
         else:
             flash(message, "info")
             # Redirect appropriately
-            return redirect(
-                url_for("adminDashboard") if user.is_admin else "http://localhost:7860/"
-            )
+            return redirect_logged_in_user(user)
 
     # Prevent spamming: Add rate limiting here if needed (e.g., check last resend time)
     # Example: Check if code was generated less than 60 seconds ago
@@ -654,6 +720,240 @@ def adminDashboard():
     return render_template("admin/adminDashboard.html", users=users)
 
 
+# Decorators to ensure user is logged in and is a medic
+def medic_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user_id" not in session:
+            flash("Please log in to access this page", "warning")
+            return redirect(url_for("login"))
+
+        user = db.session.get(User, session["user_id"])
+        # Check if user exists and has the 'medic' role
+        if not user or user.role != "medic":
+            flash("You do not have permission to access this page.", "danger")
+            # Redirect non-medics somewhere else (e.g., home or their own dashboard)
+            return redirect(url_for("home"))
+        # Check if banned
+        if user.is_banned:
+            session.clear()
+            flash("Your account has been banned", "danger")
+            return redirect(url_for("login"))
+        # Check if verified (medics should also be verified)
+        if not user.is_verified:
+            session["needs_verification"] = True  # Ensure flag is set if needed
+            flash("Please verify your email to access the dashboard.", "warning")
+            return redirect(url_for("verify"))
+
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+@app.route("/medicDashboard")
+@login_required
+@medic_required
+def medicDashboard():
+    # Get the current logged-in medic
+    # medic_required already ensures user exists and is a medic
+    current_medic = db.session.get(User, session["user_id"])
+
+    # --- Fetch Data ---
+
+    # Stats
+    total_patients_count = User.query.filter_by(role="patient", is_banned=False).count()
+    new_inquiries_count = Inquiry.query.filter_by(status="pending").count()
+    # predictions_made_count = Prediction.query.count() # REMOVED
+    one_week_ago = datetime.utcnow() - timedelta(days=7)
+    weekly_patients_count = User.query.filter(
+        User.role == "patient",
+        User.created_at >= one_week_ago,
+        User.is_banned == False,
+    ).count()
+
+    # Recent Inquiries (Get latest 5, join with User to get patient name easily)
+    recent_inquiries_data = (
+        db.session.query(Inquiry, User.username)
+        .join(User, Inquiry.patient_id == User.id)
+        .order_by(Inquiry.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    recent_inquiries_list = [
+        {
+            "id": inquiry.id,
+            "patient_id": inquiry.patient_id,
+            "name": patient_username,
+            "date": inquiry.created_at.strftime("%Y-%m-%d"),
+            "subject": inquiry.subject,
+            "urgency": inquiry.urgency,
+            "status": inquiry.status,
+        }
+        for inquiry, patient_username in recent_inquiries_data
+    ]
+
+    recent_patients_users = (
+        User.query.filter_by(role="patient", is_banned=False)
+        .order_by(User.created_at.desc())
+        .limit(3)
+        .all()
+    )
+    recent_patients_list = []
+    for patient in recent_patients_users:
+        # Placeholder for last visit - you'd query appointments/inquiries/predictions
+        last_visit_placeholder = "N/A"
+        # Find latest activity timestamp if needed (more complex query)
+        # latest_inquiry = Inquiry.query.filter_by(patient_id=patient.id).order_by(Inquiry.created_at.desc()).first()
+        # latest_prediction = Prediction.query.filter_by(patient_id=patient.id).order_by(Prediction.created_at.desc()).first()
+        # Determine actual last visit based on latest_inquiry.created_at vs latest_prediction.created_at etc.
+
+        recent_patients_list.append(
+            {
+                "id": patient.id,
+                "name": patient.username,
+                "last_visit": last_visit_placeholder,
+                # "prediction_count": pred_count, # REMOVED
+            }
+        )
+
+    # Activity Graph Data (Remove prediction data)
+    # You might want to fetch actual inquiry counts grouped by time period here
+    activity_labels_data = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]  # Dummy labels
+    # Fetch real inquiry data per month/week instead of dummy data
+    inquiry_data_points = [10, 15, 8, 12, 20, 18]  # Dummy inquiry data
+    # prediction_data_points = [5, 8, 6, 10, 15, 12] # REMOVED
+
+    # --- Pass Data to Template (Predictions Removed) ---
+    return render_template(
+        "medic/medicDashboard.html",
+        current_user=current_medic,
+        total_patients=total_patients_count,
+        new_inquiries=new_inquiries_count,
+        # predictions_made=predictions_made_count, # REMOVED
+        weekly_patients=weekly_patients_count,
+        recent_inquiries=recent_inquiries_list,
+        # recent_predictions=recent_predictions_list, # REMOVED
+        activity_labels=activity_labels_data,
+        inquiry_data=inquiry_data_points,
+        # prediction_data=prediction_data_points, # REMOVED
+        recent_patients=recent_patients_list,
+    )
+
+
+@app.route("/medicFeedback", methods=["GET", "POST"])
+@login_required  # Ensure user is logged in to submit feedback tied to their account
+def medicFeedback():
+    # Get the current logged-in user
+    user = db.session.get(User, session["user_id"])
+    if not user:
+        # Should be caught by @login_required, but good practice
+        flash("User session error. Please log in again.", "danger")
+        return redirect(url_for("login"))
+
+    # Prevent medics/admins from using this specific patient feedback form? (Optional)
+    # if user.role != 'patient':
+    #     flash("This feedback form is intended for patients.", "warning")
+    #     return redirect(url_for('home')) # Or appropriate dashboard
+
+    if request.method == "POST":
+        # --- Process Form Submission ---
+        # No need to get name/email from form, use logged-in user's details
+        subject = request.form.get("subject")
+        symptoms_text = request.form.get("symptoms")  # Optional field
+        message_text = request.form.get("message")
+        urgency_level = request.form.get("urgency", "medium")  # Default if not provided
+        consent = request.form.get("privacy_consent")
+
+        # --- Basic Server-Side Validation ---
+        if not subject or not message_text:
+            flash("Subject and Medical Question are required.", "danger")
+            # Re-render form, passing back submitted values (and user)
+            return render_template(
+                "medic/medicFeedback.html",
+                user=user,
+                form_subject=subject,
+                form_symptoms=symptoms_text,
+                form_message=message_text,
+                form_urgency=urgency_level,
+            )
+
+        if not consent:
+            flash(
+                "You must consent to sharing information to submit your question.",
+                "danger",
+            )
+            return render_template(
+                "medic/medicFeedback.html",
+                user=user,
+                form_subject=subject,
+                form_symptoms=symptoms_text,
+                form_message=message_text,
+                form_urgency=urgency_level,
+            )
+
+        # --- Save to Database ---
+        try:
+            new_inquiry = Inquiry(
+                patient_id=user.id,  # Use logged-in user's ID
+                subject=subject,
+                message=message_text,
+                symptoms=symptoms_text,  # Save symptoms text
+                urgency=urgency_level,
+                status="pending",  # Default status for new inquiries
+            )
+
+            # TODO (Optional Advanced): If prediction_id is provided,
+            # you might want to validate it exists and potentially link it.
+            # if prediction_id_str:
+            #    try:
+            #        prediction_id = int(prediction_id_str)
+            #        prediction = Prediction.query.get(prediction_id)
+            #        if prediction and prediction.patient_id == user.id:
+            #             new_inquiry.prediction_ref_id = prediction_id # Add a column to Inquiry model?
+            #        else:
+            #             flash("Invalid or inaccessible Prediction ID provided.", "warning")
+            #    except ValueError:
+            #        flash("Invalid format for Prediction ID.", "warning")
+
+            db.session.add(new_inquiry)
+            db.session.commit()
+
+            # Optional: Send email notification to medics/admin?
+            # send_email(admin_email, f"New Medical Inquiry: {subject}", f"...")
+
+            flash(
+                "Your medical question has been submitted successfully. A provider will respond soon.",
+                "success",
+            )
+            return redirect(url_for("medicFeedback"))  # Redirect after successful POST
+
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error saving medical inquiry for user {user.id}: {e}")
+            flash(
+                "An error occurred while submitting your question. Please try again.",
+                "danger",
+            )
+            # Re-render form with error state
+            return render_template(
+                "medic/medicFeedback.html",
+                user=user,
+                form_subject=subject,
+                form_symptoms=symptoms_text,
+                form_message=message_text,
+                form_urgency=urgency_level,
+            )
+
+    # --- Handle GET Request (Display the form) ---
+    # Pass the user object to pre-fill name/email
+    return render_template("medic/medicFeedback.html", user=user)
+
+
+@app.route("/admin-feedback", methods=["GET", "POST"])
+def adminFeedback():
+    return render_template("admin/adminFeedback.html")
+
+
 @app.route("/admin/ban/<int:user_id>", methods=["POST"])
 @admin_required
 def ban_user(user_id):
@@ -808,6 +1108,51 @@ def check_username():
     return jsonify({"available": is_available, "message": message})
 
 
+@app.route("/view_inquiry/<int:inquiry_id>")
+@login_required
+# @medic_required # Decide if only medics can view
+def view_inquiry(inquiry_id):
+    # Fetch inquiry details later
+    return f"Viewing inquiry {inquiry_id} (Implementation Pending)"
+
+
+@app.route("/respond_inquiry/<int:inquiry_id>")
+@login_required
+@medic_required
+def respond_inquiry(inquiry_id):
+    # Add logic to respond/update inquiry status
+    return f"Responding to inquiry {inquiry_id} (Implementation Pending)"
+
+
+# Route might need GET/POST
+@app.route("/add_patient", methods=["GET", "POST"])
+@login_required
+@medic_required  # Or maybe admin? Decide who can add patients
+def add_patient():
+    # Display form to add a new patient user
+    return "Add patient page (Implementation Pending)"
+
+
+# medicFeedback route already exists
+
+
+# Route might need GET/POST depending on implementation
+@app.route("/export_data")
+@login_required
+@medic_required  # Or admin?
+def export_data():
+    # Logic to generate and return data export (e.g., CSV)
+    return "Export data page (Implementation Pending)"
+
+
+@app.route("/view_patient/<int:patient_id>")
+@login_required
+# @medic_required # Decide who can view patient details
+def view_patient(patient_id):
+    # Fetch and display patient details
+    return f"Viewing patient {patient_id} (Implementation Pending)"
+
+
 @app.route("/logout")
 def logout():
     session.clear()  # Clear the entire session
@@ -815,21 +1160,33 @@ def logout():
     return redirect(url_for("login"))
 
 
-@app.route("/contact", methods=['GET', 'POST']) # <--- Add methods=['GET', 'POST']
+@app.route("/contact", methods=["GET", "POST"])
 def contact():
     """Renders the contact page and handles form submission."""
-    if request.method == 'POST':
+    if request.method == "POST":
         # --- Process the Form Data ---
-        name = request.form.get('name')     # Get data using the 'name' attribute from your form input fields
-        email = request.form.get('email')
-        subject = request.form.get('subject', 'Contact Form Submission') # Optional subject with default
-        message = request.form.get('message')
+        name = request.form.get(
+            "name"
+        )  # Get data using the 'name' attribute from your form input fields
+        email = request.form.get("email")
+        subject = request.form.get(
+            "subject", "Contact Form Submission"
+        )  # Optional subject with default
+        message = request.form.get("message")
 
         # --- Basic Server-Side Validation ---
         if not name or not email or not message:
-            flash('Please fill out all required fields (Name, Email, Message).', 'danger')
+            flash(
+                "Please fill out all required fields (Name, Email, Message).", "danger"
+            )
             # Re-render the form, potentially passing back entered values to repopulate
-            return render_template("contact.html", form_name=name, form_email=email, form_subject=subject, form_message=message)
+            return render_template(
+                "contact.html",
+                form_name=name,
+                form_email=email,
+                form_subject=subject,
+                form_message=message,
+            )
 
         # --- Attempt to Send Email (Replace with your actual logic) ---
         try:
@@ -844,27 +1201,36 @@ def contact():
             {message}
             """
             # Replace 'your_admin_email@example.com' with where you want emails sent
-            admin_email = os.getenv('ADMIN_CONTACT_EMAIL', 'admin@app.com') # Use env var or default
+            admin_email = os.getenv(
+                "ADMIN_CONTACT_EMAIL", "admin@app.com"
+            )  # Use env var or default
 
             # Assuming your send_email function takes (recipient, subject, body)
             if send_email(admin_email, f"Website Contact: {subject}", email_body):
-                 app.logger.info(f"Contact form submitted successfully by {email}")
-                 flash('Thank you for your message! We will get back to you soon.', 'success')
+                app.logger.info(f"Contact form submitted successfully by {email}")
+                flash(
+                    "Thank you for your message! We will get back to you soon.",
+                    "success",
+                )
             else:
-                 app.logger.error(f"Failed to send contact form email from {email}")
-                 flash('Sorry, there was an error sending your message. Please try again later or contact us directly.', 'danger')
+                app.logger.error(f"Failed to send contact form email from {email}")
+                flash(
+                    "Sorry, there was an error sending your message. Please try again later or contact us directly.",
+                    "danger",
+                )
 
         except Exception as e:
             app.logger.error(f"Error processing contact form from {email}: {e}")
-            flash('An unexpected error occurred. Please try again.', 'danger')
+            flash("An unexpected error occurred. Please try again.", "danger")
 
         # Redirect after POST to prevent form resubmission on refresh (Post-Redirect-Get Pattern)
-        return redirect(url_for('contact')) # Redirects back to the contact page (GET request)
+        return redirect(
+            url_for("contact")
+        )  # Redirects back to the contact page (GET request)
 
     # --- Handle GET Request (Display the form) ---
     # This part runs if request.method is 'GET'
     return render_template("contact.html")
-
 
 
 @app.route("/terms-of-service")
