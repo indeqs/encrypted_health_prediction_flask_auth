@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us - FHE Health Prediction{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/contact_styles.css') }}">
+<div class="contact-container">
+    <div class="contact-header">
+        <h1>Contact Us</h1>
+        <p class="subtitle">We're here to help with any questions about our privacy-first health prediction platform</p>
+    </div>
+
+    <div class="contact-content">
+        <!-- Contact Form Section -->
+        <div class="contact-form-card">
+            <h2>Send Us a Message</h2>
+            <p class="card-subtitle">Fill out the form below and we'll get back to you as soon as possible.</p>
+
+            <form action="{{ url_for('main.contact') }}" method="POST" class="contact-form">
+                <div class="form-group">
+                    <label for="name">Your Name</label>
+                    <div class="input-with-icon">
+                        <div class="input-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <input type="text" id="name" name="name" required placeholder="John Doe">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <div class="input-with-icon">
+                        <div class="input-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z">
+                                </path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                        </div>
+                        <input type="email" id="email" name="email" required placeholder="johndoe@example.com">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="subject">Subject</label>
+                    <div class="input-with-icon">
+                        <div class="input-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </div>
+                        <input type="text" id="subject" name="subject" required placeholder="How can we help you?">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" name="message" rows="5" required
+                        placeholder="Please describe your question or concern in detail..."></textarea>
+                </div>
+
+                <div class="form-group privacy-consent">
+                    <input type="checkbox" id="privacy_consent" name="privacy_consent" required>
+                    <label for="privacy_consent">I consent to having this website store my submitted information so
+                        they can respond to my inquiry. See our <a href="{{ url_for('main.privacy_policy') }}">Privacy
+                            Policy</a> to learn more about how we use data.</label>
+                </div>
+
+                <button type="submit" class="btn-primary">Send Message</button>
+            </form>
+        </div>
+
+        <!-- Contact Information Section -->
+        <div class="contact-info-card">
+            <h2>Contact Information</h2>
+            <div class="contact-section">
+                <div class="contact-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                </div>
+                <div class="contact-details">
+                    <h3>Email Us</h3>
+                    <p>General: <a href="mailto:info@fhehealthprediction.com">info@fhehealthprediction.com</a></p>
+                    <p>Support: <a href="mailto:support@fhehealthprediction.com">support@fhehealthprediction.com</a></p>
+                    <p>Privacy: <a href="mailto:privacy@fhehealthprediction.com">privacy@fhehealthprediction.com</a></p>
+                </div>
+            </div>
+
+            <div class="contact-section">
+                <div class="contact-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94m-1 7.98v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="contact-details">
+                    <h3>Call Us</h3>
+                    <p>Support: <a href="tel:+18005551234">+1 (800) 555-1234</a></p>
+                    <p>Hours: Mon-Fri, 9 AM - 5 PM ET</p>
+                </div>
+            </div>
+
+            <div class="contact-section">
+                <div class="contact-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                </div>
+                <div class="contact-details">
+                    <h3>Our Location</h3>
+                    <p>Nchiiru, Meru<br>Maua Hwy/Maua Rd, 972-60200<br>Kenya</p>
+                </div>
+            </div>
+
+            <div class="contact-section">
+                <div class="contact-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+                <div class="contact-details">
+                    <h3>Book a Demo</h3>
+                    <p>See our FHE technology in action.<br>
+                        <a href="#" class="schedule-demo-link">Schedule a demonstration</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="faq-preview">
+            <h2>Frequently Asked Questions</h2>
+            <div class="faq-preview-items">
+                <div class="faq-preview-item">
+                    <h3>What is Fully Homomorphic Encryption?</h3>
+                    <p>FHE allows computations on encrypted data without decryption, ensuring privacy during analysis.
+                    </p>
+                </div>
+                <div class="faq-preview-item">
+                    <h3>Is my health data secure?</h3>
+                    <p>Yes, FHE keeps your data encrypted end-to-end. Even we cannot access unencrypted information.</p>
+                </div>
+                <div class="faq-preview-item">
+                    <h3>How do I get started?</h3>
+                    <p>Simply <a href="{{ url_for('auth.signup') }}">create an account</a> to securely input data for
+                        analysis.</p>
+                </div>
+            </div>
+            <div class="faq-more">
+                <a href="{{ url_for('main.home') }}#faq" class="btn-secondary">View All FAQs</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

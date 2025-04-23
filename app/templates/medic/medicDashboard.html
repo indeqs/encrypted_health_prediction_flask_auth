@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Medic Dashboard - FHE Health Prediction{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_styles.css') }}">
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>Medic Dashboard</h1>
+        <p class="subtitle">Manage patient inquiries</p>
+        <div class="user-info">
+            <span class="welcome-text">Welcome, Dr. {{ current_user.username }}</span>
+            <a href="{{ url_for('auth.logout') }}" class="logout-btn">Logout</a>
+        </div>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <div class="stat-details">
+                <h3>Total Patients</h3>
+                <p class="stat-number" id="total-patients-count">{{ total_patients }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
+            <div class="stat-details">
+                <h3>New Inquiries</h3>
+                <p class="stat-number" id="new-inquiries-count">{{ new_inquiries }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+            </div>
+            <div class="stat-details">
+                <h3>This Week</h3>
+                <p class="stat-number" id="weekly-patients-count">{{ weekly_patients }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-content">
+        <div class="dashboard-card recent-inquiries">
+            <div class="card-header">
+                <h2>Recent Medical Inquiries</h2>
+                <a href="#" class="view-all">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Patient ID</th>
+                            <th>Name</th>
+                            <th>Date</th>
+                            <th>Subject</th>
+                            <th>Urgency</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inquiry in recent_inquiries %}
+                        <tr>
+                            <td>{{ inquiry.patient_id }}</td>
+                            <td>{{ inquiry.name }}</td>
+                            <td>{{ inquiry.date }}</td>
+                            <td>{{ inquiry.subject }}</td>
+                            <td>
+                                <span
+                                    class="status-badge {{ 'urgent' if inquiry.urgency == 'high' else 'normal' if inquiry.urgency == 'medium' else 'low' }}">
+                                    {{ inquiry.urgency | title }}
+                                </span>
+                            </td>
+                            <td>
+                                <span
+                                    class="status-badge {{ 'pending' if inquiry.status == 'pending' else 'success' if inquiry.status == 'resolved' else 'warning' }}">
+                                    {{ inquiry.status | title }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{{ url_for('medic.view_inquiry', inquiry_id=inquiry.id) }}" class="btn-view"
+                                        title="View">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">No recent inquiries found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/medic_dashboard.js') }}"></script>
+{% endblock %}

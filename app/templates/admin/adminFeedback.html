@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Admin Support - FHE Health Prediction{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/contact_styles.css') }}">
+<div class="contact-container">
+    <div class="contact-header">
+        <h1>Admin Support</h1>
+        <p class="subtitle">Need help with your account or having technical issues? Our admin team is here to help.</p>
+    </div>
+
+    <div class="contact-content">
+        <!-- Admin Feedback Form Section -->
+        <div class="contact-form-card">
+            <h2>Technical Support Request</h2>
+            <p class="card-subtitle">Submit your question or report an issue with the platform.</p>
+
+            <form action="{{ url_for('admin.adminFeedback') }}" method="POST" class="contact-form">
+                {# Use hidden field for CSRF token if using Flask-WTF later #}
+
+                <div class="form-group">
+                    <label for="name">Your Name</label>
+                    <div class="input-with-icon">
+                        <div class="input-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        {# Pre-fill name from logged-in user and make readonly #}
+                        <input type="text" id="name" name="name" required placeholder="Your Name"
+                            value="{{ user.username if user else '' }}" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <div class="input-with-icon">
+                        <div class="input-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z">
+                                </path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                        </div>
+                        {# Pre-fill email from logged-in user and make readonly #}
+                        <input type="email" id="email" name="email" required placeholder="Your Email Address"
+                            value="{{ user.email if user else '' }}" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Your Username (if applicable)</label>
+                    <div class="input-with-icon">
+                        <div class="input-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                                <path d="M7 12h10"></path>
+                                <path d="M7 8h2"></path>
+                                <path d="M7 16h2"></path>
+                            </svg>
+                        </div>
+                        {# Pre-fill username and make readonly #}
+                        <input type="text" id="username" name="username" placeholder="Your username on our platform"
+                            value="{{ user.username if user else '' }}" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="issue_type">Issue Type</label>
+                    <div class="input-with-icon">
+                        <div class="input-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15"></line>
+                            </svg>
+                        </div>
+                        {# Repopulate select on error #}
+                        <select id="issue_type" name="issue_type" required>
+                            <option value="" {{ 'selected' if not form_issue_type }}>Please select an issue type
+                            </option>
+                            <option value="account" {{ 'selected' if form_issue_type=='account' }}>Account Access
+                            </option>
+                            <option value="technical" {{ 'selected' if form_issue_type=='technical' }}>Technical Problem
+                            </option>
+                            <option value="billing" {{ 'selected' if form_issue_type=='billing' }}>Billing Question
+                            </option>
+                            <option value="feature" {{ 'selected' if form_issue_type=='feature' }}>Feature Request
+                            </option>
+                            <option value="privacy" {{ 'selected' if form_issue_type=='privacy' }}>Privacy Concern
+                            </option>
+                            <option value="other" {{ 'selected' if form_issue_type=='other' }}>Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="subject">Subject</label>
+                    <div class="input-with-icon">
+                        <div class="input-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </div>
+                        {# Repopulate on error #}
+                        <input type="text" id="subject" name="subject" required
+                            placeholder="Brief description of your issue"
+                            value="{{ form_subject if form_subject else '' }}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    {# Repopulate on error #}
+                    <textarea id="message" name="message" rows="5" required
+                        placeholder="Please describe your question or issue in detail...">{{ form_message if form_message else '' }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="browser_info">Browser & Device Information (Optional)</label>
+                    {# Repopulate on error #}
+                    <textarea id="browser_info" name="browser_info" rows="2"
+                        placeholder="e.g., Chrome 96 on Windows 10...">{{ form_browser_info if form_browser_info else '' }}</textarea>
+                    <p class="note">This helps us troubleshoot technical issues more effectively.</p>
+                </div>
+
+                <div class="form-group privacy-consent">
+                    {# Keep checked state if repopulating after error - Need to pass consent_error flag from route if
+                    validation fails here #}
+                    {# Simplified: Just require re-checking #}
+                    <input type="checkbox" id="privacy_consent" name="privacy_consent" required>
+                    <label for="privacy_consent">I consent to having this website store my submitted
+                        information...</label>
+                </div>
+
+                <button type="submit" class="btn-primary">Submit Support Request</button>
+            </form>
+        </div>
+
+        <!-- Admin Support Information -->
+        <div class="contact-info-card">
+            <!-- Rest of the informational card -->
+        </div>
+
+        <!-- Quick Links -->
+        <div class="quick-links-card">
+            <!-- Rest of the quick links card -->
+        </div>
+    </div>
+</div>
+{% endblock %}

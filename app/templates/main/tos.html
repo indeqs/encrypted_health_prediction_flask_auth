@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Terms of Service - FHE Health Prediction{% endblock %}
+
+{% block content %}
+<div class="legal-container">
+    <div class="legal-header">
+        <h1>Terms of Service</h1>
+        <p class="last-updated">Last Updated: April 17, 2025</p>
+    </div>
+
+    <div class="legal-content">
+        <div class="legal-toc">
+            <h2>Table of Contents</h2>
+            <ul>
+                <li><a href="#acceptance">1. Acceptance of Terms</a></li>
+                <li><a href="#description">2. Service Description</a></li>
+                <li><a href="#eligibility">3. User Eligibility</a></li>
+                <li><a href="#registration">4. Registration and Account Security</a></li>
+                <li><a href="#privacy">5. Privacy and Data Security</a></li>
+                <li><a href="#content">6. User Content</a></li>
+                <li><a href="#restrictions">7. Prohibited Activities</a></li>
+                <li><a href="#intellectual">8. Intellectual Property Rights</a></li>
+                <li><a href="#disclaimer">9. Disclaimer of Warranties</a></li>
+                <li><a href="#limitation">10. Limitation of Liability</a></li>
+                <li><a href="#termination">11. Termination</a></li>
+                <li><a href="#changes">12. Changes to Terms</a></li>
+                <li><a href="#governing">13. Governing Law</a></li>
+                <li><a href="#contact">14. Contact Information</a></li>
+            </ul>
+        </div>
+
+        <div class="legal-section" id="acceptance">
+            <h2>1. Acceptance of Terms</h2>
+            <p>By accessing or using the FHE Health Prediction platform ("Service"), you agree to be bound by these
+                Terms of Service ("Terms"). If you disagree with any part of the Terms, you may not access the Service.
+            </p>
+        </div>
+
+        <div class="legal-section" id="description">
+            <h2>2. Service Description</h2>
+            <p>FHE Health Prediction is a platform that provides health analytics and predictions using Fully
+                Homomorphic Encryption (FHE) technology. The Service processes encrypted health data to generate
+                insights without decrypting the underlying personal information.</p>
+            <p>While our Service provides health-related predictions and insights, it is not intended to replace
+                professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other
+                qualified health provider with any questions you may have regarding a medical condition.</p>
+        </div>
+
+        <div class="legal-section" id="eligibility">
+            <h2>3. User Eligibility</h2>
+            <p>To use our Service, you must be at least 18 years of age and capable of forming a binding contract. By
+                using the Service, you represent and warrant that you meet these eligibility requirements.</p>
+        </div>
+
+        <div class="legal-section" id="registration">
+            <h2>4. Registration and Account Security</h2>
+            <p>When you create an account with us, you must provide accurate, complete, and current information. You are
+                responsible for safeguarding your password and for all activities that occur under your account. You
+                agree to notify us immediately of any unauthorized use of your account.</p>
+            <p>We reserve the right to disable any user account if, in our opinion, you have violated any provision of
+                these Terms.</p>
+        </div>
+
+        <div class="legal-section" id="privacy">
+            <h2>5. Privacy and Data Security</h2>
+            <p>Your privacy is important to us. Our <a href="{{ url_for('main.privacy_policy') }}">Privacy Policy</a> explains how
+                we collect, use, and protect your personal information and encrypted health data.</p>
+            <p>While we implement advanced encryption technology and security measures, no method of electronic
+                transmission or storage is 100% secure. We cannot guarantee absolute security of your data.</p>
+        </div>
+
+        <div class="legal-section" id="content">
+            <h2>6. User Content</h2>
+            <p>You retain all rights to any health data and information you submit to our Service. By submitting data,
+                you grant us a worldwide, non-exclusive, royalty-free license to use, process, and store your encrypted
+                data solely for the purpose of providing and improving the Service.</p>
+        </div>
+
+        <div class="legal-section" id="restrictions">
+            <h2>7. Prohibited Activities</h2>
+            <p>You agree not to engage in any of the following prohibited activities:</p>
+            <ul>
+                <li>Attempting to decipher, decompile, disassemble, or reverse engineer any of the software comprising
+                    the Service</li>
+                <li>Attempting to breach or circumvent security or authentication measures</li>
+                <li>Interfering with or disrupting the Service or servers or networks connected to the Service</li>
+                <li>Using the Service for any illegal or unauthorized purpose</li>
+                <li>Submitting false or misleading information</li>
+                <li>Impersonating any person or entity</li>
+            </ul>
+        </div>
+
+        <div class="legal-section" id="intellectual">
+            <h2>8. Intellectual Property Rights</h2>
+            <p>The Service and its original content, features, and functionality are and will remain the exclusive
+                property of FHE Health Prediction and its licensors. The Service is protected by copyright, trademark,
+                and other laws. Our trademarks and trade dress may not be used in connection with any product or service
+                without the prior written consent.</p>
+        </div>
+
+        <div class="legal-section" id="disclaimer">
+            <h2>9. Disclaimer of Warranties</h2>
+            <p>The Service is provided on an "AS IS" and "AS AVAILABLE" basis. To the fullest extent permitted by law,
+                we disclaim all warranties, express or implied, including but not limited to implied warranties of
+                merchantability, fitness for a particular purpose, and non-infringement.</p>
+            <p>We do not warrant that the Service will be uninterrupted, secure, or error-free, or that any predictions
+                or insights will be accurate or reliable.</p>
+        </div>
+
+        <div class="legal-section" id="limitation">
+            <h2>10. Limitation of Liability</h2>
+            <p>To the maximum extent permitted by law, in no event shall FHE Health Prediction be liable for any
+                indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of
+                profits, data, or other intangible losses, resulting from:</p>
+            <ul>
+                <li>Your access to or use of or inability to access or use the Service</li>
+                <li>Any conduct or content of any third party on the Service</li>
+                <li>Any content obtained from the Service</li>
+                <li>Unauthorized access, use, or alteration of your transmissions or content</li>
+            </ul>
+        </div>
+
+        <div class="legal-section" id="termination">
+            <h2>11. Termination</h2>
+            <p>We may terminate or suspend your account and access to the Service immediately, without prior notice or
+                liability, for any reason, including without limitation if you breach the Terms.</p>
+            <p>Upon termination, your right to use the Service will immediately cease. All provisions of the Terms which
+                by their nature should survive termination shall survive, including ownership provisions, warranty
+                disclaimers, indemnity, and limitations of liability.</p>
+        </div>
+
+        <div class="legal-section" id="changes">
+            <h2>12. Changes to Terms</h2>
+            <p>We reserve the right to modify or replace these Terms at any time. If a revision is material, we will
+                provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material
+                change will be determined at our sole discretion.</p>
+            <p>By continuing to access or use our Service after those revisions become effective, you agree to be bound
+                by the revised Terms.</p>
+        </div>
+
+        <div class="legal-section" id="governing">
+            <h2>13. Governing Law</h2>
+            <p>These Terms shall be governed and construed in accordance with the laws of [Your Jurisdiction], without
+                regard to its conflict of law provisions.</p>
+        </div>
+
+        <div class="legal-section" id="contact">
+            <h2>14. Contact Information</h2>
+            <p>If you have any questions about these Terms, please contact us at:</p>
+            <div class="contact-info">
+                <p>Email: legal@fhehealthprediction.com</p>
+                <p>Address: Nchiru Market, Maua Hwy/Maua Rd, 972-60200, Meru</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

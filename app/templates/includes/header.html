@@ -1,0 +1,22 @@
+<header class="site-header">
+    <div class="header-container">
+        <div class="logo">
+            <a href="{{ url_for('main.home') }}">
+                <span class="logo-text">FHE Health</span>
+            </a>
+        </div>
+        <nav class="main-nav">
+            <ul>
+                <li><a href="{{ url_for('main.home') }}" {% if request.endpoint=='home' %}class="active" {% endif %}>Home</a>
+                </li>
+                <li><a href="{{ url_for('main.contact') }}" {% if request.endpoint=='contact' %}class="active" {% endif
+                        %}>Contact</a></li>
+                <!-- Add other nav links as needed -->
+            </ul>
+        </nav>
+        <div class="nav-buttons">
+            <a href="{{ url_for('auth.login') }}" class="btn-secondary">Log In</a>
+            <a href="{{ url_for('auth.signup') }}" class="btn-primary">Sign Up</a>
+        </div>
+    </div>
+</header>
