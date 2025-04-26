@@ -137,7 +137,10 @@
                     {# Simplified: Just require re-checking #}
                     <input type="checkbox" id="privacy_consent" name="privacy_consent" required>
                     <label for="privacy_consent">I consent to having this website store my submitted
-                        information...</label>
+                        information. See our
+                        <a href="{{ url_for('main.privacy_policy') }}" target="_blank">Privacy Policy</a> and
+                        <a href="{{ url_for('main.terms_of_service') }}" target="_blank">Terms of Service</a> to learn
+                        more about what we collect.</label>
                 </div>
 
                 <button type="submit" class="btn-primary">Submit Support Request</button>

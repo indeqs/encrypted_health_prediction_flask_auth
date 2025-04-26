@@ -35,6 +35,7 @@ def create_app(config_name=None):
 
     # Import models here after db is initialized and configured
     from . import models  # Import models to ensure they are registered with SQLAlchemy
+    from .models import User
 
     # --- Create Database Tables and Initial Admin ---
     with app.app_context():
@@ -93,6 +94,15 @@ def create_app(config_name=None):
     from .utils.helpers import nl2br_filter
 
     app.template_filter("nl2br")(nl2br_filter)
+    
+    @app.context_processor
+    def inject_user():
+        user = None
+        user_id = session.get('user_id')
+        if user_id:
+            user = db.session.get(User, user_id) # Use db.session.get
+        return dict(current_user_ctx=user) # Use a distinct name like current_user_ctx
+
 
     # --- Register Request Hooks ---
     @app.before_request

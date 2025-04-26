@@ -11,9 +11,9 @@ from flask import (
     make_response,
     current_app,
 )
-from sqlalchemy.orm import joinedload  # For efficient loading
+from sqlalchemy.orm import joinedload, selectinload
 from .. import db
-from ..models import User, Inquiry
+from ..models import User, Inquiry, Message
 from ..auth.utils import admin_required  # Import decorator from auth utils
 from . import admin_bp  # Import blueprint instance
 
@@ -68,37 +68,69 @@ def adminDashboard():
         recent_inquiries_admin=recent_inquiries_list,
     )
 
-
 # --- View Inquiry (Admin Perspective) ---
 @admin_bp.route("/view_inquiry/<int:inquiry_id>")
 @admin_required
 def admin_view_inquiry(inquiry_id):
     try:
-        # Eager load the related patient (submitter) user object
-        inquiry = (
-            db.session.query(Inquiry)
-            .options(joinedload(Inquiry.patient))
-            .get_or_404(inquiry_id)
-        )
+        # Eager load patient and messages efficiently
+        inquiry = db.session.query(Inquiry)\
+                      .options(
+                          joinedload(Inquiry.patient), # User who submitted
+                          selectinload(Inquiry.messages).joinedload(Message.user) # Messages and their senders
+                      )\
+                      .get_or_404(inquiry_id)
 
-        # inquiry.patient should be populated due to joinedload
         submitter = inquiry.patient
+        # Pass current_user for the template logic (e.g., reply form action)
+        current_user = db.session.get(User, session.get('user_id'))
+
         if not submitter:
-            flash("Submitter user not found for this inquiry.", "warning")
-            # Decide how to handle - show inquiry anyway or error?
+             flash("Submitter user not found for this inquiry.", "warning")
 
     except Exception as e:
-        current_app.logger.error(
-            f"Error retrieving inquiry {inquiry_id} for admin: {e}"
-        )
+        current_app.logger.error(f"Error retrieving inquiry {inquiry_id} for admin view: {e}")
         flash("Could not retrieve inquiry details.", "danger")
-        return redirect(url_for("admin.adminDashboard"))
+        return redirect(url_for('.adminDashboard')) # Use relative endpoint
 
+    # Pass the inquiry object which now contains loaded messages AND current_user
     return render_template(
-        "admin/viewInquiryAdmin.html",  # Specific admin view template
+        "admin/viewInquiryAdmin.html",
         inquiry=inquiry,
-        submitter=submitter,  # Pass the submitter object
+        submitter=submitter,
+        current_user=current_user # Add current_user to context
     )
+
+@admin_bp.route('/inquiry/<int:inquiry_id>/reply', methods=['POST'])
+@admin_required
+def reply_to_inquiry_admin(inquiry_id):
+    inquiry = db.session.query(Inquiry).get_or_404(inquiry_id)
+    reply_body = request.form.get('reply_body')
+    current_admin_id = session['user_id']
+
+    if not reply_body:
+        flash("Reply message cannot be empty.", "danger")
+        return redirect(url_for('.admin_view_inquiry', inquiry_id=inquiry_id))
+
+    try:
+        new_message = Message(
+            body=reply_body,
+            inquiry_id=inquiry.id,
+            user_id=current_admin_id # Admin is the sender
+        )
+        inquiry.updated_at = datetime.utcnow() # Update inquiry timestamp
+        db.session.add(new_message)
+        db.session.commit()
+        flash("Reply sent successfully.", "success")
+
+        # TODO: Optional - Send email notification to inquiry.patient
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error saving admin reply for inquiry {inquiry_id}: {e}")
+        flash("An error occurred while sending the reply.", "danger")
+
+    return redirect(url_for('.admin_view_inquiry', inquiry_id=inquiry_id))
 
 
 # --- Update Inquiry Status (Admin Perspective) ---

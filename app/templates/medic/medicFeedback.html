@@ -121,10 +121,14 @@
                 </div>
 
                 <div class="form-group privacy-consent">
-                    {# Keep checked state if repopulating after error #}
                     <input type="checkbox" id="privacy_consent" name="privacy_consent" required {{ 'checked' if
                         consent_error }}>
-                    <label for="privacy_consent">I consent to sharing my medical information...</label>
+                    <label for="privacy_consent">
+                        I consent to sharing my medical information. See our
+                        <a href="{{ url_for('main.privacy_policy') }}" target="_blank">Privacy Policy</a> and
+                        <a href="{{ url_for('main.terms_of_service') }}" target="_blank">Terms of Service</a> to learn
+                        more about what we collect.
+                    </label>
                 </div>
 
                 <button type="submit" class="btn-primary">Submit Medical Question</button>

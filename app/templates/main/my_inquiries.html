@@ -1,0 +1,48 @@
+{% extends "base.html" %} {# Or your patient-specific base #}
+
+{% block title %}My Inquiries{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>My Submitted Inquiries</h1>
+    <hr>
+    {% if inquiries %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Last Updated</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inquiry in inquiries %}
+                <tr>
+                    <td>{{ inquiry.subject }}</td>
+                    <td>
+                        <span
+                            class="badge {% if inquiry.status == 'resolved' %}bg-success{% elif inquiry.status == 'in_progress' %}bg-info text-dark{% else %}bg-primary{% endif %}">
+                            {{ 'In Progress' if inquiry.status == 'in_progress' else inquiry.status | title }}
+                        </span>
+                    </td>
+                    <td>{{ inquiry.updated_at.strftime('%Y-%m-%d %H:%M') }}</td> {# Use helper property #}
+                    <td>
+                        <a href="{{ url_for('main.view_my_inquiry', inquiry_id=inquiry.id) }}"
+                            class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-center text-muted">You have not submitted any inquiries yet.</p>
+    <p class="text-center"><a href="{{ url_for('medic.medicFeedback') }}" class="btn btn-primary">Submit a Medical
+            Question</a></p>
+    {% endif %}
+</div>
+{% endblock %}

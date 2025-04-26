@@ -8,11 +8,12 @@ from flask import (
     current_app,
 )
 from datetime import datetime, timedelta
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from .. import db
-from ..models import User, Inquiry
+from ..models import User, Inquiry, Message
 from ..auth.utils import login_required, medic_required  # Import decorators
 from . import medic_bp  # Import blueprint instance
+from ..utils.helpers import redirect_logged_in_user
 
 
 # --- Medic Dashboard ---
@@ -110,6 +111,22 @@ def medicFeedback():
     if not user:
         flash("Session error.", "danger")
         return redirect(url_for("auth.login"))
+    
+    # --- ADD ROLE CHECK ---
+    # Only allow patients to submit medical inquiries via this form.
+    # Redirect admins and medics away.
+    if user.role != 'patient':
+         flash("Only patients can submit medical inquiries.", "warning")
+         # Redirect based on their actual role
+         if user.is_admin:
+             return redirect(url_for('admin.adminDashboard'))
+         elif user.role == 'medic':
+             # If the medic is approved, redirect to their dashboard, otherwise login (handled by redirect_logged_in_user)
+             return redirect_logged_in_user(user) # Let helper decide where approved/unapproved medics go
+         else:
+            # Fallback for unknown roles
+            return redirect(url_for('main.home'))
+    # --- END ROLE CHECK ---
 
     # Optional: Restrict access if needed (e.g., only patients can submit)
     if user.role != "patient":
@@ -188,48 +205,86 @@ def medicFeedback():
 
 
 # --- View Specific Inquiry (Medic Perspective) ---
+# --- View Specific Inquiry (Medic Perspective) ---
 @medic_bp.route("/view_inquiry/<int:inquiry_id>")
 @login_required
-@medic_required  # Only medics view inquiries this way
+@medic_required # Only medics view inquiries this way
 def view_inquiry(inquiry_id):
     try:
-        # Use joinedload to efficiently get the patient info along with inquiry
-        inquiry = (
-            db.session.query(Inquiry)
-            .options(joinedload(Inquiry.patient))
-            .get_or_404(inquiry_id)
-        )
-        patient = inquiry.patient  # Access the loaded patient object
+        # Eager load patient and messages efficiently
+        inquiry = db.session.query(Inquiry)\
+                      .options(
+                          joinedload(Inquiry.patient), # Load patient info
+                          selectinload(Inquiry.messages).joinedload(Message.user) # Load messages and their senders
+                      )\
+                      .get_or_404(inquiry_id)
 
+        patient = inquiry.patient # Access the loaded patient object
         if not patient:
-            flash("Patient record associated with this inquiry not found.", "warning")
-            # Handle as needed, maybe still show inquiry details
+             flash("Patient record associated with this inquiry not found.", "warning")
 
-        # Format dates for display
+        # --- GET THE CURRENT USER ---
+        current_user = db.session.get(User, session.get('user_id'))
+        # Basic check, although decorators should handle non-logged-in users
+        if not current_user:
+             flash("Could not identify current user.", "danger")
+             return redirect(url_for('.medicDashboard'))
+        # --- END GET CURRENT USER ---
+
+        # Format dates for display (moved inside try block)
         created_date = inquiry.created_at.strftime("%Y-%m-%d %H:%M")
-        updated_date = (
-            inquiry.updated_at.strftime("%Y-%m-%d %H:%M")
-            if inquiry.updated_at
-            else "N/A"
-        )
+        updated_date = inquiry.updated_at.strftime("%Y-%m-%d %H:%M") if inquiry.updated_at else "N/A"
 
     except Exception as e:
-        current_app.logger.error(
-            f"Error retrieving inquiry {inquiry_id} for medic view: {e}"
-        )
+        current_app.logger.error(f"Error retrieving inquiry {inquiry_id} for medic view: {e}")
         flash("Could not retrieve inquiry details.", "danger")
-        return redirect(
-            url_for(".medicDashboard")
-        )  # Redirect to medic dashboard on error
+        return redirect(url_for('.medicDashboard')) # Redirect to medic dashboard on error
 
+    # --- PASS current_user TO TEMPLATE ---
     return render_template(
-        "medic/viewInquiry.html",  # Specific medic view template
+        "medic/viewInquiry.html", # Specific medic view template
         inquiry=inquiry,
-        patient=patient,  # Pass the patient object
+        patient=patient, # Pass the patient object
         created_date=created_date,
         updated_date=updated_date,
+        current_user=current_user # <-- ADD THIS
     )
 
+@medic_bp.route('/inquiry/<int:inquiry_id>/reply', methods=['POST'])
+@login_required
+@medic_required # Ensure only approved medic replies
+def reply_to_inquiry_medic(inquiry_id):
+    # Similar logic as admin reply, but user_id is the medic's ID
+    inquiry = db.session.query(Inquiry).get_or_404(inquiry_id)
+    reply_body = request.form.get('reply_body')
+    current_medic_id = session['user_id']
+
+    # Optional: Extra check if this medic should be handling this specific inquiry?
+    # (For now, any approved medic can reply)
+
+    if not reply_body:
+        flash("Reply message cannot be empty.", "danger")
+        return redirect(url_for('.view_inquiry', inquiry_id=inquiry_id))
+
+    try:
+        new_message = Message(
+            body=reply_body,
+            inquiry_id=inquiry.id,
+            user_id=current_medic_id # Medic is the sender
+        )
+        inquiry.updated_at = datetime.utcnow()
+        db.session.add(new_message)
+        db.session.commit()
+        flash("Reply sent successfully.", "success")
+
+        # TODO: Optional - Send email notification to inquiry.patient
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error saving medic reply for inquiry {inquiry_id}: {e}")
+        flash("An error occurred while sending the reply.", "danger")
+
+    return redirect(url_for('.view_inquiry', inquiry_id=inquiry_id))
 
 # --- Update Inquiry Status (Medic Perspective) ---
 @medic_bp.route("/update_inquiry_status/<int:inquiry_id>", methods=["POST"])

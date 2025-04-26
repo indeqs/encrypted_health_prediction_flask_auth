@@ -7,11 +7,39 @@
         </div>
         <nav class="main-nav">
             <ul>
-                <li><a href="{{ url_for('main.home') }}" {% if request.endpoint=='home' %}class="active" {% endif %}>Home</a>
+                <li><a href="{{ url_for('main.home') }}" {% if request.endpoint=='home' %}class="active" {% endif
+                        %}>Home</a>
                 </li>
                 <li><a href="{{ url_for('main.contact') }}" {% if request.endpoint=='contact' %}class="active" {% endif
                         %}>Contact</a></li>
-                <!-- Add other nav links as needed -->
+                {% if session.user_id %}
+                {% set current_user = current_user_ctx %}
+
+                {# --- ADD THIS BLOCK --- #}
+                {% if current_user and current_user.role == 'patient' %}
+                <li class="nav-item"> {# Adjust tag/class based on your nav structure #}
+                    <a class="nav-link" href="{{ url_for('main.my_inquiries') }}">My Inquiries</a>
+                </li>
+                {% endif %}
+                {# --- END BLOCK --- #}
+
+                {# Links for other logged-in roles (optional) #}
+                {% if current_user and current_user.is_admin %}
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.adminDashboard') }}">Admin
+                        Dashboard</a></li>
+                {% endif %}
+                {% if current_user and current_user.role == 'medic' and current_user.is_approved %}
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('medic.medicDashboard') }}">Medic
+                        Dashboard</a></li>
+                {% endif %}
+
+                {# Logout Link #}
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a></li>
+
+                {% else %} {# User is not logged in #}
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Login</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.signup') }}">Sign Up</a></li>
+                {% endif %}
             </ul>
         </nav>
         <div class="nav-buttons">

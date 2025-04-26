@@ -13,6 +13,9 @@ from ..models import User  # Import User if needed (e.g., for context)
 from ..utils.email_sender import send_email
 from ..utils.helpers import redirect_logged_in_user
 from . import main_bp  # Import blueprint instance
+from ..auth.utils import login_required
+from sqlalchemy.orm import selectinload
+from ..models import Inquiry, Message
 
 
 # --- Home Page ---
@@ -37,6 +40,54 @@ def home():
 
     # Render home for logged-out users or if session check fails
     return render_template("main/index.html")
+
+@main_bp.route('/my-inquiries')
+@login_required
+def my_inquiries():
+    user_id = session['user_id']
+    # Fetch inquiries submitted by the current user, ordered by last activity
+    # Using the 'last_activity' property requires a more complex query or sorting in Python
+    # Simpler approach: Order by updated_at for now
+    inquiries = Inquiry.query.filter_by(patient_id=user_id)\
+                     .order_by(Inquiry.updated_at.desc())\
+                     .all()
+    return render_template('main/my_inquiries.html', inquiries=inquiries)
+
+@main_bp.route('/my-inquiry/<int:inquiry_id>')
+@login_required
+def view_my_inquiry(inquiry_id):
+    user_id = session['user_id']
+    try:
+        inquiry = db.session.query(Inquiry)\
+                      .options(
+                          selectinload(Inquiry.messages).joinedload(Message.user) # Load messages and sender
+                      )\
+                      .filter_by(id=inquiry_id)\
+                      .first_or_404()
+
+        # --- SECURITY CHECK: Ensure current user owns this inquiry ---
+        if inquiry.patient_id != user_id:
+            flash("You do not have permission to view this inquiry.", "danger")
+            return redirect(url_for('.my_inquiries')) # Or main.home
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching inquiry {inquiry_id} for user {user_id}: {e}")
+        flash("Could not retrieve inquiry details.", "danger")
+        return redirect(url_for('.my_inquiries'))
+
+    # Decide if patients can reply. If yes, include a form similar to admin/medic
+    can_reply = False # Set to True if patients should be able to reply to their own threads
+
+    return render_template('main/view_my_inquiry.html', inquiry=inquiry, can_reply=can_reply)
+
+# Optional: Add a reply route for patients if can_reply is True
+# @main_bp.route('/my-inquiry/<int:inquiry_id>/reply', methods=['POST'])
+# @login_required
+# def reply_to_my_inquiry(inquiry_id):
+#    # Similar logic to other reply routes
+#    # Perform security check: inquiry.patient_id == session['user_id']
+#    # Create Message with user_id = session['user_id']
+#    # Redirect back to url_for('.view_my_inquiry', inquiry_id=inquiry_id)
 
 
 # --- Contact Page ---

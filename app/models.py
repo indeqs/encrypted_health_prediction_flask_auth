@@ -24,13 +24,16 @@ class User(db.Model):
         db.Boolean, default=False, nullable=False
     )  # Medics need admin approval
 
+    # Add relationship to messages sent BY this user
+    messages = db.relationship('Message', back_populates='user', lazy='dynamic', foreign_keys='Message.user_id') # Explicit FK
+
     # Relationships (adjust lazy loading as needed)
     # For inquiries submitted BY this user (if they are a patient)
     patient_inquiries = db.relationship(
         "Inquiry",
         foreign_keys="Inquiry.patient_id",
         back_populates="patient",
-        lazy="dynamic",
+        lazy="dynamic"
     )
     # Optional: If you track which medic handles an inquiry
     # medic_assigned_inquiries = db.relationship('Inquiry', foreign_keys='Inquiry.medic_id', back_populates='medic', lazy='dynamic')
@@ -99,5 +102,33 @@ class Inquiry(db.Model):
     # Optional: Relationship to the medic
     # medic = db.relationship('User', back_populates='medic_assigned_inquiries', foreign_keys=[medic_id])
 
+    # Add relationship to messages WITHIN this inquiry
+    messages = db.relationship('Message', back_populates='inquiry', cascade="all, delete-orphan", order_by='Message.created_at')
+
+    # Optional: Helper to get latest message timestamp (useful for sorting inquiries)
+    # @property
+    # def last_activity(self):
+    #     last_message = self.messages.order_by(Message.created_at.desc()).first()
+    #     if last_message:
+    #         return last_message.created_at
+    #     return self.updated_at # Fallback to inquiry update time
+
     def __repr__(self):
         return f"<Inquiry {self.id} - {self.subject}>"
+    
+    
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Foreign Keys
+    inquiry_id = db.Column(db.Integer, db.ForeignKey('inquiry.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) # ID of the message sender
+
+    # Relationships (add back_populates for bidirectional access)
+    inquiry = db.relationship('Inquiry', back_populates='messages')
+    user = db.relationship('User', back_populates='messages') # User who sent this message
+
+    def __repr__(self):
+        return f'<Message {self.id} for Inquiry {self.inquiry_id}>'

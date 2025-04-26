@@ -88,4 +88,58 @@
         </div>
     </div>
 </div>
+
+{# --- Message Thread --- #}
+<div class="card admin-card shadow mt-4">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="fas fa-comments me-2"></i>Conversation Thread</h4>
+    </div>
+    <div class="card-body" id="message-thread" style="max-height: 400px; overflow-y: auto;">
+        {% if inquiry.messages %}
+            {% for message in inquiry.messages %}
+                <div class="message mb-3 p-2 rounded {% if message.user_id == inquiry.patient_id %}bg-light border{% else %}bg-primary bg-opacity-10 border border-primary{% endif %}">
+                    <p class="mb-1">
+                        <strong>
+                            {% if message.user_id == inquiry.patient_id %}
+                                <i class="fas fa-user me-1"></i>{{ inquiry.patient.username }} (Patient)
+                            {% elif message.user.is_admin %}
+                                 <i class="fas fa-user-shield me-1"></i>{{ message.user.username }} (Admin)
+                            {% elif message.user.role == 'medic' %}
+                                 <i class="fas fa-user-md me-1"></i>Dr. {{ message.user.username }} (Medic)
+                            {% else %}
+                                 <i class="fas fa-user-circle me-1"></i>{{ message.user.username }}
+                            {% endif %}
+                        </strong>
+                        <small class="text-muted float-end">{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </p>
+                    {# Use nl2br filter for message body #}
+                    <p class="mb-0 message-body">{{ message.body | nl2br }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted text-center">No messages yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+{# --- Reply Form --- #}
+<div class="card admin-card shadow mt-4">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="fas fa-reply me-2"></i>Send Reply</h4>
+    </div>
+    <div class="card-body">
+        {# Determine correct action URL based on user role viewing the page #}
+        {% set reply_url = url_for('admin.reply_to_inquiry_admin', inquiry_id=inquiry.id) if current_user.is_admin else url_for('medic.reply_to_inquiry_medic', inquiry_id=inquiry.id) %}
+        <form action="{{ reply_url }}" method="POST">
+            {# Add CSRF token if using Flask-WTF: {{ form.csrf_token }} #}
+            <div class="mb-3">
+                <label for="reply_body" class="form-label">Your Message:</label>
+                <textarea class="form-control" id="reply_body" name="reply_body" rows="4" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane me-1"></i> Send Reply
+            </button>
+        </form>
+    </div>
+</div>
 {% endblock %}

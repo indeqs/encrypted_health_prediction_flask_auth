@@ -1,0 +1,75 @@
+{% extends "base.html" %} {# Or your patient base template #}
+
+{% block title %}Inquiry Details - {{ inquiry.subject }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <a href="{{ url_for('main.my_inquiries') }}" class="btn btn-sm btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left me-1"></i> Back to My Inquiries
+    </a>
+
+    {# Display Initial Inquiry Details (Same as admin/medic view) #}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="mb-0">Inquiry: {{ inquiry.subject }}</h2>
+        </div>
+        <div class="card-body">
+            <p><strong>Status:</strong> {{ inquiry.status | title }}</p>
+            <p><strong>Urgency:</strong> {{ inquiry.urgency | title }}</p>
+            <p><strong>Submitted:</strong> {{ inquiry.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            {% if inquiry.symptoms %}
+            <p><strong>Symptoms:</strong></p>
+            <pre>{{ inquiry.symptoms }}</pre>
+            {% endif %}
+            <p><strong>Details:</strong></p>
+            <pre>{{ inquiry.message }}</pre> {# Use
+            <pre> or nl2br #}
+         </div>
+    </div>
+
+
+    {# Display Message Thread (Same structure as admin/medic view) #}
+    <div class="card shadow mt-4">
+        <div class="card-header">
+            <h4 class="mb-0"><i class="fas fa-comments me-2"></i>Conversation Thread</h4>
+        </div>
+        <div class="card-body" id="message-thread" style="max-height: 400px; overflow-y: auto;">
+            {% if inquiry.messages %}
+                 {# Loop and display messages exactly like in admin/medic view #}
+                 {% for message in inquiry.messages %}
+                     <div class="message mb-3 p-2 rounded {% if message.user_id == inquiry.patient_id %}bg-light border{% else %}bg-info bg-opacity-10 border border-info{% endif %}"> {# Different color for replies #}
+                         <p class="mb-1">
+                             <strong>
+                                 {# Logic to display sender role/name #}
+                                 {% if message.user_id == inquiry.patient_id %}
+                                     <i class="fas fa-user me-1"></i>You
+                                 {% elif message.user.is_admin %}
+                                      <i class="fas fa-user-shield me-1"></i>Admin Support
+                                 {% elif message.user.role == 'medic' %}
+                                      <i class="fas fa-user-md me-1"></i>Medic Team
+                                 {% else %}
+                                      <i class="fas fa-user-circle me-1"></i>{{ message.user.username }}
+                                 {% endif %}
+                             </strong>
+                             <small class="text-muted float-end">{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                         </p>
+                         <p class="mb-0 message-body">{{ message.body | nl2br }}</p>
+                     </div>
+                 {% endfor %}
+            {% else %}
+                 <p class="text-muted text-center">No messages yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Optional: Add Reply Form for Patient #}
+    {% if can_reply %}
+         <div class="card shadow mt-4">
+             {# ... Add reply form similar to admin/medic ... #}
+             {# Make sure action points to the patient reply route #}
+             {# e.g., action="{{ url_for('main.reply_to_my_inquiry', inquiry_id=inquiry.id) }}" #}
+         </div>
+    {% endif %}
+
+</div>
+{% endblock %}
