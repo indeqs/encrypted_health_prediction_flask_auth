@@ -456,7 +456,10 @@
                 <!-- Can highlight based on dashboard too -->
                 <i class="fas fa-users fa-fw"></i> User Management
             </a>
-            <!-- Add other admin links here -->
+            <a class="nav-link" href="{{ url_for('admin.adminDashboard') }}#inquiryManagementTable">
+                <div class="sb-nav-link-icon"><i class="fas fa-envelope-open-text"></i></div>
+                Inquiries
+            </a>
 
             <hr class="mx-3"> <!-- Visual separator -->
 

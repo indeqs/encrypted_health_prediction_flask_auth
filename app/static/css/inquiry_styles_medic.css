@@ -271,12 +271,13 @@
 
 .reply-form-card textarea.form-control {
     border-radius: 8px;
-    min-height: 120px;
+    min-height: 200px; /* Increased from 120px to 200px */
     padding: 1rem;
     font-size: 0.95rem;
     border: 1px solid #e0e0e0;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
     resize: vertical;
+    width: 100%; /* Ensure it takes full width */
 }
 
 .reply-form-card textarea.form-control:focus {
@@ -347,7 +348,7 @@
     }
 
     .reply-form-card textarea.form-control {
-        min-height: 100px;
+        min-height: 150px; /* Increased from 100px to 150px for mobile */
     }
 }
 

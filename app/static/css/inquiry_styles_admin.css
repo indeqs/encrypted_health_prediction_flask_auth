@@ -1,0 +1,288 @@
+/* static/css/inquiry_styles_admin.css (or your main admin CSS) */
+
+/* === Quick Replies Styling === */
+.quick-replies {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.quick-replies h6 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6c757d;
+    /* Bootstrap muted color */
+}
+
+.quick-reply-btn {
+    background-color: #f8f9fa;
+    /* Bootstrap light background */
+    border: 1px solid #dee2e6;
+    /* Bootstrap default border */
+    color: #495057;
+    /* Bootstrap dark grey text */
+    padding: 0.3rem 0.6rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    /* Allow wrapping */
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.quick-reply-btn:hover {
+    background-color: #e9ecef;
+    /* Bootstrap grey-200 */
+    border-color: #ced4da;
+    color: #212529;
+}
+
+/* === Message Thread Styling (Admin - Borrow from Medic/Patient) === */
+.message-thread-card {
+    padding: 0;
+}
+
+.message-thread-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    /* Light header */
+    border-bottom: 1px solid #dee2e6;
+}
+
+.message-thread-card .card-header h2 {
+    font-size: 1.15rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    color: #495057;
+}
+
+.message-thread-card .card-header h2 i {
+    margin-right: 0.6rem;
+    color: #6c757d;
+}
+
+.thread-actions button {
+    background: none;
+    border: none;
+    color: #6c757d;
+    padding: 0.25rem 0.5rem;
+}
+
+.thread-actions button:hover {
+    color: #212529;
+}
+
+
+.message-thread-body {
+    padding: 1rem 1.5rem;
+    max-height: 450px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    /* White background for thread area */
+}
+
+.time-divider {
+    text-align: center;
+    margin: 1.5rem 0;
+    font-size: 0.8rem;
+    color: #adb5bd;
+    /* Lighter grey */
+    position: relative;
+}
+
+.time-divider span {
+    background-color: #ffffff;
+    /* Match body background */
+    padding: 0 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.time-divider::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 100%;
+    height: 1px;
+    background-color: #e9ecef;
+    /* Light line */
+    z-index: 0;
+}
+
+
+.message {
+    display: flex;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+.message-user {
+    /* Admin/Medic */
+    justify-content: flex-end;
+}
+
+.message-others {
+    /* Patient */
+    justify-content: flex-start;
+}
+
+.message-content {
+    max-width: 80%;
+    padding: 0.7rem 1rem;
+    /* Slightly smaller padding */
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.45;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    word-wrap: break-word;
+}
+
+.message-others .message-content {
+    /* Patient message */
+    background-color: #e9ecef;
+    /* Bootstrap light grey */
+    color: #212529;
+    border: 1px solid #dee2e6;
+    border-bottom-left-radius: 0;
+}
+
+.message-user .message-content {
+    /* Admin/Medic message */
+    background-color: #cfe2ff;
+    /* Bootstrap primary-light */
+    color: #084298;
+    /* Bootstrap primary-dark text */
+    border: 1px solid #b6d4fe;
+    border-bottom-right-radius: 0;
+}
+
+.message-sender-info {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.message-sender-info i {
+    margin-right: 0.3rem;
+}
+
+.message-user .message-sender-info {
+    color: #052c65;
+    /* Darker blue for own name */
+}
+
+.message-user .message-sender-info i {
+    color: #0d6efd;
+    /* Bootstrap primary */
+}
+
+
+.message-body {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.message-meta {
+    font-size: 0.7rem;
+    color: #adb5bd;
+    text-align: right;
+    margin-top: 0.3rem;
+}
+
+.message-others .message-meta {
+    text-align: left;
+}
+
+
+/* Reply Form Card Styling */
+.reply-form-card {
+    padding: 0;
+}
+
+.reply-form-card .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.reply-form-card .card-header h2 {
+    font-size: 1.15rem;
+    display: flex;
+    align-items: center;
+    color: #495057;
+}
+
+.reply-form-card .card-header h2 i {
+    margin-right: 0.6rem;
+    color: #6c757d;
+}
+
+.reply-form-card .card-body {
+    padding: 1.5rem;
+}
+
+/* Ensure Bootstrap classes are styled if not globally included */
+.form-label {
+    display: inline-block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-control {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    appearance: none;
+    border-radius: 0.25rem;
+    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+.form-control:focus {
+    color: #212529;
+    background-color: #fff;
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, .25);
+}
+
+.btn {
+    display: inline-block;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+    cursor: pointer;
+    user-select: none;
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    border-radius: 0.25rem;
+    transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    color: #fff;
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
