@@ -1,4 +1,26 @@
 document.addEventListener('DOMContentLoaded', function () {
+    const trigger = document.getElementById('profileDropdownTrigger');
+    const menu = document.getElementById('profileDropdownMenu');
+
+    if (trigger && menu) {
+        trigger.addEventListener('click', function (event) {
+            event.stopPropagation(); // Prevent click from immediately closing menu
+            const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+            trigger.setAttribute('aria-expanded', !isExpanded);
+            menu.classList.toggle('show');
+        });
+
+        // Optional: Close dropdown if clicked outside
+        document.addEventListener('click', function (event) {
+            if (!trigger.contains(event.target) && !menu.contains(event.target)) {
+                if (menu.classList.contains('show')) {
+                    trigger.setAttribute('aria-expanded', 'false');
+                    menu.classList.remove('show');
+                }
+            }
+        });
+    }
+    
     const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
 
     if (mobileMenuToggle) {

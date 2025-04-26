@@ -1,14 +1,19 @@
-{% extends "base.html" %} {# Or your patient-specific base #}
+{% extends "base.html" %}
 
-{% block title %}My Inquiries{% endblock %}
+{% block title %}My Inquiries - FHE Health{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inquiry_styles.css') }}">
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>My Submitted Inquiries</h1>
-    <hr>
+<div class="inquiries-container">
+    <h1 class="page-title">My Medical Inquiries</h1>
+
     {% if inquiries %}
     <div class="table-responsive">
-        <table class="table table-hover">
+        <table class="inquiries-table">
             <thead>
                 <tr>
                     <th>Subject</th>
@@ -19,19 +24,29 @@
             </thead>
             <tbody>
                 {% for inquiry in inquiries %}
-                <tr>
+                <tr class="inquiry-row">
                     <td>{{ inquiry.subject }}</td>
                     <td>
-                        <span
-                            class="badge {% if inquiry.status == 'resolved' %}bg-success{% elif inquiry.status == 'in_progress' %}bg-info text-dark{% else %}bg-primary{% endif %}">
-                            {{ 'In Progress' if inquiry.status == 'in_progress' else inquiry.status | title }}
+                        <span class="status-badge 
+                            {% if inquiry.status == 'resolved' %}status-resolved
+                            {% elif inquiry.status == 'in_progress' %}status-in-progress
+                            {% else %}status-new{% endif %}">
+                            {{ inquiry.status | replace('_', ' ') | title }}
                         </span>
                     </td>
-                    <td>{{ inquiry.updated_at.strftime('%Y-%m-%d %H:%M') }}</td> {# Use helper property #}
+                    <td data-time="{{ inquiry.updated_at.isoformat() }}" class="timestamp">
+                        {{ inquiry.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                    </td>
                     <td>
                         <a href="{{ url_for('main.view_my_inquiry', inquiry_id=inquiry.id) }}"
-                            class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-eye"></i> View Details
+                            class="action-btn btn-view">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+                                <path
+                                    d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                            </svg>
+                            View Details
                         </a>
                     </td>
                 </tr>
@@ -40,9 +55,15 @@
         </table>
     </div>
     {% else %}
-    <p class="text-center text-muted">You have not submitted any inquiries yet.</p>
-    <p class="text-center"><a href="{{ url_for('medic.medicFeedback') }}" class="btn btn-primary">Submit a Medical
-            Question</a></p>
+    <div class="empty-state">
+        <p>You have not submitted any medical inquiries yet.</p>
+        <a href="{{ url_for('medic.medicFeedback') }}" class="btn-submit">Submit a Medical Question</a>
+    </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/inquiry_scripts.js') }}"></script>
 {% endblock %}

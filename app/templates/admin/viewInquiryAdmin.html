@@ -78,7 +78,7 @@
                     {# Form to update status #}
                     <form action="{{ url_for('admin.admin_update_inquiry_status', inquiry_id=inquiry.id) }}"
                         method="POST" class="d-flex justify-content-md-end align-items-center">
-                        <label for="statusSelect" class="form-label me-2 mb-0">Update Status:</label>
+                        <label for="statusSelect" class="form-label me-2 mb-0">Status:</label>
                         <select name="status" id="statusSelect" class="form-select form-select-sm w-auto me-2">
                             {# Add more admin-specific statuses if needed #}
                             <option value="pending" {{ 'selected' if inquiry.status=='pending' }}>Pending</option>

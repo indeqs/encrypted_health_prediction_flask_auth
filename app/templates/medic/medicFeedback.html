@@ -99,6 +99,7 @@
                 <div class="form-group">
                     <label for="urgency">How urgent is your question?</label>
                     <div class="input-with-icon">
+                        {# Keep the outer icon for the select box itself #}
                         <div class="input-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -106,14 +107,22 @@
                                 <polyline points="12 6 12 12 16 14"></polyline>
                             </svg>
                         </div>
+                        {# Add symbols directly to the option text #}
                         <select id="urgency" name="urgency">
-                            <option value="low" {{ 'selected' if form_urgency=='low' }}>Not urgent - General information
-                                only</option>
+                            <option value="low" {{ 'selected' if form_urgency=='low' }}>
+                                ⚪️ Low - General information only
+                            </option>
                             <option value="medium" {{ 'selected' if form_urgency=='medium' or not form_urgency }}>
-                                Somewhat
-                                urgent - Looking for clarification</option>
-                            <option value="high" {{ 'selected' if form_urgency=='high' }}>Urgent - Need more immediate
-                                response</option>
+                                🟡 Medium - Looking for clarification
+                            </option>
+                            <option value="high" {{ 'selected' if form_urgency=='high' }}>
+                                🔴 High - Need more immediate response
+                            </option>
+                            {# Alternative symbols if circles aren't desired:
+                            <option value="low">ℹ️ Low - General info</option>
+                            <option value="medium">🕒 Medium - Clarification</option>
+                            <option value="high">❗️ High - Immediate response</option>
+                            #}
                         </select>
                     </div>
                     <p class="note"><strong>Note:</strong> For medical emergencies, please call emergency services

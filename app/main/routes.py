@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from flask import (
     render_template,
     request,
@@ -7,9 +8,10 @@ from flask import (
     flash,
     session,
     current_app,
+    abort,
 )
 from .. import db
-from ..models import User  # Import User if needed (e.g., for context)
+from ..models import User, Inquiry, Message
 from ..utils.email_sender import send_email
 from ..utils.helpers import redirect_logged_in_user
 from . import main_bp  # Import blueprint instance
@@ -45,49 +47,106 @@ def home():
 @login_required
 def my_inquiries():
     user_id = session['user_id']
-    # Fetch inquiries submitted by the current user, ordered by last activity
-    # Using the 'last_activity' property requires a more complex query or sorting in Python
-    # Simpler approach: Order by updated_at for now
+    # Order by last activity (updated_at timestamp)
     inquiries = Inquiry.query.filter_by(patient_id=user_id)\
                      .order_by(Inquiry.updated_at.desc())\
                      .all()
     return render_template('main/my_inquiries.html', inquiries=inquiries)
 
+# --- View Single Inquiry ---
 @main_bp.route('/my-inquiry/<int:inquiry_id>')
 @login_required
 def view_my_inquiry(inquiry_id):
     user_id = session['user_id']
+
     try:
+        # Fetch inquiry with messages and the user who sent each message, ordered by creation time
         inquiry = db.session.query(Inquiry)\
                       .options(
-                          selectinload(Inquiry.messages).joinedload(Message.user) # Load messages and sender
+                          selectinload(Inquiry.messages).joinedload(Message.user),
+                          selectinload(Inquiry.messages).options(db.defer(Message.user_id)) # Optional: Defer unused columns
                       )\
                       .filter_by(id=inquiry_id)\
-                      .first_or_404()
+                      .first() # Use first() instead of first_or_404 for custom check
+
+        if not inquiry:
+             abort(404) # Inquiry not found
 
         # --- SECURITY CHECK: Ensure current user owns this inquiry ---
         if inquiry.patient_id != user_id:
             flash("You do not have permission to view this inquiry.", "danger")
-            return redirect(url_for('.my_inquiries')) # Or main.home
+            # Redirect to list instead of aborting if it's just a permission issue
+            return redirect(url_for('.my_inquiries'))
+
+        # Order messages chronologically after loading
+        inquiry.messages.sort(key=lambda msg: msg.created_at)
 
     except Exception as e:
         current_app.logger.error(f"Error fetching inquiry {inquiry_id} for user {user_id}: {e}")
         flash("Could not retrieve inquiry details.", "danger")
         return redirect(url_for('.my_inquiries'))
 
-    # Decide if patients can reply. If yes, include a form similar to admin/medic
-    can_reply = False # Set to True if patients should be able to reply to their own threads
+    # --- Enable Replies for Patients ---
+    can_reply = True
 
-    return render_template('main/view_my_inquiry.html', inquiry=inquiry, can_reply=can_reply)
+    return render_template(
+        'main/view_my_inquiry.html',
+        inquiry=inquiry,
+        can_reply=can_reply,
+        current_user_id=user_id # Pass user_id for comparison in template
+    )
 
-# Optional: Add a reply route for patients if can_reply is True
-# @main_bp.route('/my-inquiry/<int:inquiry_id>/reply', methods=['POST'])
-# @login_required
-# def reply_to_my_inquiry(inquiry_id):
-#    # Similar logic to other reply routes
-#    # Perform security check: inquiry.patient_id == session['user_id']
-#    # Create Message with user_id = session['user_id']
-#    # Redirect back to url_for('.view_my_inquiry', inquiry_id=inquiry_id)
+# --- Reply Route for Patients ---
+@main_bp.route('/my-inquiry/<int:inquiry_id>/reply', methods=['POST'])
+@login_required
+def reply_to_my_inquiry(inquiry_id):
+    user_id = session['user_id']
+    message_content = request.form.get('message_content')
+
+    if not message_content:
+        flash("Reply message cannot be empty.", "warning")
+        return redirect(url_for('.view_my_inquiry', inquiry_id=inquiry_id))
+
+    try:
+        # Fetch the inquiry again for security check and updates
+        inquiry = db.session.get(Inquiry, inquiry_id)
+
+        # --- Security Check: Ensure inquiry exists and belongs to the user ---
+        if not inquiry:
+            abort(404)
+        if inquiry.patient_id != user_id:
+            flash("You do not have permission to reply to this inquiry.", "danger")
+            abort(403) # Forbidden access
+
+        # Create the new message
+        new_message = Message(
+            inquiry_id=inquiry_id,
+            user_id=user_id,
+            body=message_content
+            # created_at defaults to now()
+        )
+
+        # Update inquiry's last activity time
+        inquiry.updated_at = datetime.utcnow()
+
+        # Optional: Re-open inquiry if it was resolved
+        if inquiry.status == 'resolved':
+            inquiry.status = 'in_progress'
+            flash("Inquiry status changed back to 'In Progress'.", "info")
+
+        db.session.add(new_message)
+        # No need to add inquiry again unless status changed, but it's safe to do so
+        db.session.add(inquiry)
+        db.session.commit()
+
+        flash("Your reply has been added.", "success")
+
+    except Exception as e:
+        db.session.rollback() # Rollback in case of error
+        current_app.logger.error(f"Error adding reply to inquiry {inquiry_id} by user {user_id}: {e}")
+        flash("An error occurred while adding your reply. Please try again.", "danger")
+
+    return redirect(url_for('.view_my_inquiry', inquiry_id=inquiry_id))
 
 
 # --- Contact Page ---

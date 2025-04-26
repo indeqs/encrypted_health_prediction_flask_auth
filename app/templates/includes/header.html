@@ -1,3 +1,4 @@
+<!-- templates/includes/header.html -->
 <header class="site-header">
     <div class="header-container">
         <div class="logo">
@@ -7,44 +8,66 @@
         </div>
         <nav class="main-nav">
             <ul>
-                <li><a href="{{ url_for('main.home') }}" {% if request.endpoint=='home' %}class="active" {% endif
-                        %}>Home</a>
-                </li>
-                <li><a href="{{ url_for('main.contact') }}" {% if request.endpoint=='contact' %}class="active" {% endif
-                        %}>Contact</a></li>
+                <li><a href="{{ url_for('main.home') }}" {% if request.endpoint=='main.home' %}class="active" {% endif
+                        %}>Home</a></li>
+                <li><a href="{{ url_for('main.contact') }}" {% if request.endpoint=='main.contact' %}class="active" {%
+                        endif %}>Contact</a></li>
+
                 {% if session.user_id %}
-                {% set current_user = current_user_ctx %}
-
-                {# --- ADD THIS BLOCK --- #}
-                {% if current_user and current_user.role == 'patient' %}
-                <li class="nav-item"> {# Adjust tag/class based on your nav structure #}
-                    <a class="nav-link" href="{{ url_for('main.my_inquiries') }}">My Inquiries</a>
-                </li>
-                {% endif %}
-                {# --- END BLOCK --- #}
-
-                {# Links for other logged-in roles (optional) #}
-                {% if current_user and current_user.is_admin %}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.adminDashboard') }}">Admin
-                        Dashboard</a></li>
-                {% endif %}
-                {% if current_user and current_user.role == 'medic' and current_user.is_approved %}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('medic.medicDashboard') }}">Medic
-                        Dashboard</a></li>
-                {% endif %}
-
-                {# Logout Link #}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a></li>
-
-                {% else %} {# User is not logged in #}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Login</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.signup') }}">Sign Up</a></li>
+                {# Logged-in user: Show profile dropdown instead of individual links #}
+                {% else %}
+                {# No extra nav links needed for logged-out users here #}
                 {% endif %}
             </ul>
         </nav>
-        <div class="nav-buttons">
-            <a href="{{ url_for('auth.login') }}" class="btn-secondary">Log In</a>
-            <a href="{{ url_for('auth.signup') }}" class="btn-primary">Sign Up</a>
+
+        {# Profile Dropdown or Login/Signup Buttons #}
+        <div class="user-actions">
+            {% if session.user_id %}
+            {% set current_user = current_user_ctx %}
+            <div class="profile-dropdown">
+                <button class="profile-trigger" id="profileDropdownTrigger" aria-haspopup="true" aria-expanded="false">
+                    {# Display username or a generic name if not available #}
+                    {{ current_user.username if current_user and current_user.username else 'Account' }}
+                    {# Simple dropdown arrow icon #}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path fill-rule="evenodd"
+                            d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
+                    </svg>
+                </button>
+                <ul class="dropdown-menu" id="profileDropdownMenu" aria-labelledby="profileDropdownTrigger">
+                    {# Patient-specific navigation #}
+                    {% if current_user and current_user.role == 'patient' %}
+                    <li><a href="{{ url_for('main.my_inquiries') }}">My Inquiries</a></li>
+                    {% endif %}
+
+                    {# Admin-specific navigation #}
+                    {% if current_user and current_user.is_admin %}
+                    <li><a href="{{ url_for('admin.adminDashboard') }}">Admin Dashboard</a></li>
+                    {% endif %}
+
+                    {# Medic-specific navigation #}
+                    {% if current_user and current_user.role == 'medic' and current_user.is_approved %}
+                    <li><a href="{{ url_for('medic.medicDashboard') }}">Medic Dashboard</a></li>
+                    {% endif %}
+
+                    {# Divider (optional) #}
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+
+                    {# Logout link for all logged-in users #}
+                    <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
+                </ul>
+            </div>
+            {% else %}
+            {# Logged-out user: Show Login/Signup buttons #}
+            <div class="nav-buttons">
+                <a href="{{ url_for('auth.login') }}" class="btn-secondary">Log In</a>
+                <a href="{{ url_for('auth.signup') }}" class="btn-primary">Sign Up</a>
+            </div>
+            {% endif %}
         </div>
     </div>
 </header>

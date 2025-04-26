@@ -1657,7 +1657,7 @@ body {
 .header-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 15px 20px;
+    padding: 10px 20px; /* Slightly reduce vertical padding if desired */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1718,14 +1718,27 @@ body {
 .nav-buttons {
     display: flex;
     gap: 10px;
+    align-items: center;
 }
 
-.nav-buttons .btn-secondary {
-    padding: 8px 16px;
+.nav-buttons a.btn-secondary,
+.nav-buttons a.btn-primary {
+    padding: 6px 12px;       /* Reduce padding for smaller header buttons */
+    font-size: 14px;         /* Slightly smaller font */
+    text-decoration: none !important; /* Ensure NO underline for BOTH */
+    white-space: nowrap;     /* Prevent text wrapping */
+    width: auto;             /* Override width: 100% from general btn-primary */
+    display: inline-flex;    /* Ensure consistent layout */
+    justify-content: center; /* Center content within button */
+    align-items: center;   /* Center content vertically */
+    line-height: 1.4;      /* Adjust line height if needed */
+    /* Remove width: 100% if inherited */
 }
 
-.nav-buttons .btn-primary {
-    padding: 8px 16px;
+.nav-buttons a.btn-primary {
+    /* It already inherits background/color from general .btn-primary */
+    /* It inherits padding/font-size/text-decoration etc from the rule above */
+    border: none; /* Ensure no border if needed */
 }
 
 /* Mobile Navigation */
@@ -1781,6 +1794,112 @@ body {
         flex-direction: column;
         padding: 15px 20px;
     }
+}
+/* === Profile Dropdown Styles === */
+.user-actions {
+    /* Container for either dropdown or buttons */
+    display: flex;
+    align-items: center;
+}
+
+.profile-dropdown {
+    position: relative; /* Needed for absolute positioning of the menu */
+}
+
+.profile-trigger {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-color);
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.profile-trigger:hover,
+.profile-trigger:focus {
+    background-color: var(--hover-bg);
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.profile-trigger svg {
+    transition: transform 0.2s;
+}
+
+.profile-trigger[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+}
+
+
+.dropdown-menu {
+    display: none; /* Hidden by default */
+    position: absolute;
+    top: calc(100% + 5px); /* Position below the trigger */
+    right: 0;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 180px; /* Adjust as needed */
+    z-index: 101; /* Above header */
+    list-style: none;
+    padding: 8px 0; /* Vertical padding for the menu */
+    margin: 0;
+}
+
+.dropdown-menu.show {
+    display: block; /* Show when active */
+}
+
+.dropdown-menu li a {
+    display: block;
+    padding: 10px 16px;
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.dropdown-menu li a:hover {
+    background-color: var(--hover-bg);
+    color: var(--primary-color);
+}
+
+.dropdown-divider {
+    height: 1px;
+    margin: 8px 0;
+    overflow: hidden;
+    background-color: var(--border-color);
+    border: 0;
+}
+
+/* Ensure nav-buttons styling doesn't conflict */
+.nav-buttons a.btn-secondary,
+.nav-buttons a.btn-primary {
+    /* Keep your existing refined styles from previous step */
+    padding: 6px 12px;
+    font-size: 14px;
+    text-decoration: none !important;
+    white-space: nowrap;
+    width: auto;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1.4;
+}
+/* === End Profile Dropdown Styles === */
+
+/* Adjust main-nav positioning if needed */
+.main-nav {
+   margin-right: auto; /* Push user actions to the right */
+   margin-left: 25px;  /* Add some space after logo */
 }
 
 /* --- END OF FILE --- */

@@ -1,0 +1,355 @@
+/* inquiry_styles.css */
+
+/* Main container styling */
+.inquiries-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+/* Page title styling */
+.page-title {
+    color: #2c8ecb;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 0.75rem;
+}
+
+/* Table styling */
+.inquiries-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.inquiries-table thead {
+    background-color: #f8f9fa;
+}
+
+.inquiries-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.inquiries-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+.inquiries-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 30px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-new {
+    background-color: #e3f2fd;
+    color: #0d47a1;
+}
+
+.status-in-progress {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-resolved {
+    background-color: #e0f7fa;
+    color: #006064;
+}
+
+/* Action buttons */
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    gap: 0.5rem;
+}
+
+.btn-view {
+    background-color: #2c8ecb;
+    color: white;
+    border: none;
+}
+
+.btn-view:hover {
+    background-color: #2579b5;
+    transform: translateY(-1px);
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.empty-state p {
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+}
+
+.btn-submit {
+    background-color: #2c8ecb;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-submit:hover {
+    background-color: #2579b5;
+}
+
+/* Single inquiry view */
+.inquiry-details {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    padding: 1.5rem 2rem; /* Adjust padding */
+    margin-bottom: 2rem;
+}
+
+.inquiry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Align items to top */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    gap: 1rem; /* Add gap between title/meta and status */
+    margin-bottom: 1.5rem; /* Increase spacing */
+    padding-bottom: 1.5rem; /* Increase spacing */
+    border-bottom: 1px solid #e9ecef;
+}
+
+.inquiry-title {
+    font-size: 1.75rem; /* Slightly larger title */
+    color: #343a40;
+    margin: 0 0 0.5rem 0; /* Add bottom margin */
+    font-weight: 600;
+}
+
+.inquiry-meta {
+    display: flex;
+    flex-wrap: wrap; /* Allow meta items to wrap */
+    gap: 0.5rem 1.5rem; /* Row and column gap */
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+.inquiry-meta span {
+    display: inline-block;
+}
+
+.inquiry-header .status-badge {
+    margin-top: 5px; /* Align badge slightly better */
+    flex-shrink: 0; /* Prevent badge from shrinking */
+}
+
+.inquiry-content {
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+/* Messages thread */
+.messages-container {
+    margin-top: 2rem;
+    border-top: 1px solid #eee; /* Separator */
+    padding-top: 1.5rem;
+}
+.messages-container h2 {
+    font-size: 1.25rem;
+    color: #495057;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.message {
+    display: flex; /* Use flexbox for alignment */
+    margin-bottom: 1.5rem;
+    width: 100%; /* Ensure message takes full width */
+}
+
+/* Align user's messages to the right */
+.message-user {
+    justify-content: flex-end;
+}
+
+/* Align others' messages to the left */
+.message-others {
+    justify-content: flex-start;
+}
+
+.message-content {
+    max-width: 75%; /* Max width for message bubble */
+    padding: 0.8rem 1.2rem;
+    border-radius: 12px; /* More rounded bubbles */
+    position: relative;
+    line-height: 1.5;
+}
+
+/* Styling for others' messages (e.g., admin/medic) */
+.message-others .message-content {
+    background-color: #f1f3f5; /* Light gray background */
+    color: #343a40;
+    border-bottom-left-radius: 0; /* Tail effect */
+}
+
+/* Styling for the current user's messages */
+.message-user .message-content {
+    background-color: #e3f2fd; /* Light blue background */
+    color: #1c7ed6;
+    border-bottom-right-radius: 0; /* Tail effect */
+}
+
+.message-meta {
+    font-size: 0.75rem; /* Smaller meta text */
+    color: #6c757d;
+    margin-top: 0.5rem;
+    display: flex;
+    justify-content: space-between; /* Align username left, time right */
+    align-items: center;
+}
+
+.message-meta strong {
+    font-weight: 600;
+    margin-right: 0.5rem;
+}
+
+.message-user .message-meta {
+    /* Optional: different color for user meta if needed */
+    color: #4dabf7;
+}
+
+/* Reply form */
+.reply-form {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee; /* Separator */
+}
+
+.reply-form h3 {
+    font-size: 1.25rem;
+    color: #495057;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.reply-form .form-group {
+    margin-bottom: 1rem; /* Spacing for textarea */
+}
+
+.reply-form textarea {
+    width: 100%;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    min-height: 80px; /* Adjust initial height */
+    resize: vertical; /* Allow vertical resize */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.reply-form textarea:focus {
+    outline: none;
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.reply-form button.btn-reply { /* Specific class for button */
+    background-color: #2c8ecb;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem; /* Adjust padding */
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.reply-form button {
+    background-color: #2c8ecb;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.reply-form button.btn-reply:hover {
+    background-color: #2579b5;
+    transform: translateY(-1px);
+}
+/* Closed inquiry state */
+.reply-form-closed {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border-top: 1px solid #eee;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    text-align: center;
+}
+.reply-form-closed p {
+    margin-bottom: 1rem;
+    color: #6c757d;
+}
+
+/* Back link */
+.back-link {
+    margin-top: 2rem;
+}
+
+.back-link a {
+    color: #2c8ecb;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.back-link a:hover {
+    color: #2579b5;
+    text-decoration: underline;
+}
+
+/* Responsive adjustments if needed */
+@media (max-width: 600px) {
+    .inquiry-details {
+        padding: 1rem;
+    }
+    .inquiry-header {
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+    .inquiry-title {
+        font-size: 1.5rem;
+    }
+    .message-content {
+        max-width: 90%; /* Allow slightly wider messages on small screens */
+        padding: 0.6rem 1rem;
+    }
+    .reply-form textarea {
+        min-height: 60px;
+    }
+}
