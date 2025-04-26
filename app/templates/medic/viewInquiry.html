@@ -4,6 +4,7 @@
 
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_styles.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inquiry_styles_medic.css') }}">
 <div class="dashboard-container">
     <div class="dashboard-header">
         <h1>Medical Inquiry Details</h1>
@@ -89,72 +90,147 @@
     </div>
 </div>
 
-{# --- Message Thread --- #}
-{# Apply dashboard-card styling to the outer container #}
-<div class="dashboard-card message-thread-card mt-4">
+{# --- Enhanced Message Thread Section --- #}
+<div class="dashboard-card message-thread-card">
     <div class="card-header">
-        {# Use dashboard card header style #}
-        <h2><i class="fas fa-comments me-2"></i>Conversation Thread</h2>
+        <h2><i class="fas fa-comments"></i>Conversation Thread</h2>
+        <div class="thread-actions">
+            <button type="button" title="Mark all as read">
+                <i class="fas fa-check-double"></i>
+            </button>
+            <button type="button" title="Scroll to bottom" id="scroll-to-bottom">
+                <i class="fas fa-arrow-down"></i>
+            </button>
+        </div>
     </div>
     <div class="card-body message-thread-body" id="message-thread">
         {% if inquiry.messages %}
+        {# Optional: Add date divider for better context #}
+        {% set current_date = None %}
         {% for message in inquiry.messages %}
-        {# Add message-user or message-others for alignment #}
+        {# Check if we need to add a date divider #}
+        {% set message_date = message.created_at.strftime('%Y-%m-%d') %}
+        {% if current_date != message_date %}
+        <div class="time-divider">
+            <span>{{ message.created_at.strftime('%B %d, %Y') }}</span>
+        </div>
+        {% set current_date = message_date %}
+        {% endif %}
+
+        {# Message container with appropriate alignment class #}
         <div class="message {% if message.user_id == current_user.id %}message-user{% else %}message-others{% endif %}">
-            {# Wrap content in its own div for styling #}
             <div class="message-content">
-                <div class="message-sender-info mb-1"> {# Renamed for clarity #}
-                    <strong>
-                        {# Logic for displaying sender name and role #}
-                        {% if message.user_id == inquiry.patient_id %}
-                        <i class="fas fa-user me-1"></i>{{ inquiry.patient.username }} (Patient)
-                        {% elif message.user.is_admin %}
-                        <i class="fas fa-user-shield me-1"></i>{{ message.user.username }} (Admin)
-                        {% elif message.user.role == 'medic' %}
-                        <i class="fas fa-user-md me-1"></i>Dr. {{ message.user.username }} (Medic)
-                        {% else %}
-                        <i class="fas fa-user-circle me-1"></i>{{ message.user.username }}
-                        {% endif %}
-                    </strong>
+                <div class="message-sender-info">
+                    {% if message.user_id == current_user.id %}
+                    <strong>You</strong>
+                    <i class="fas fa-user-md"></i>
+                    {% elif message.user_id == inquiry.patient_id %}
+                    <i class="fas fa-user"></i>
+                    <strong>{{ patient.username }} (Patient)</strong>
+                    {% elif message.user.is_admin %}
+                    <i class="fas fa-user-shield"></i>
+                    <strong>{{ message.user.username }} (Admin)</strong>
+                    {% elif message.user.role == 'medic' %}
+                    <i class="fas fa-user-md"></i>
+                    <strong>Dr. {{ message.user.username }}</strong>
+                    {% else %}
+                    <i class="fas fa-user-circle"></i>
+                    <strong>{{ message.user.username }}</strong>
+                    {% endif %}
                 </div>
-                {# Message Body #}
-                <p class="mb-0 message-body">{{ message.body | nl2br }}</p>
-                {# Meta info (timestamp) #}
-                <div class="message-meta mt-1">
-                    <small class="text-muted">{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+
+                {# Message content #}
+                <div class="message-body">{{ message.body | nl2br }}</div>
+
+                {# Message timestamp #}
+                <div class="message-meta">
+                    <small>{{ message.created_at.strftime('%H:%M') }}</small>
                 </div>
             </div>
         </div>
-        {% endfor %}
-        {% else %}
-        <p class="text-muted text-center">No messages yet.</p>
-        {% endif %}
+
+        {# Add status change indicators if applicable #}
+        {% if loop.index < inquiry.messages|length and inquiry.status_changes %} {% for status_change in
+            inquiry.status_changes %} {% if status_change.timestamp> message.created_at and status_change.timestamp <
+                inquiry.messages[loop.index].created_at %} <div class="status-message">
+                Status changed to <strong>{{ status_change.new_status | title }}</strong>
     </div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+    {% endfor %}
+    {% else %}
+    <div class="text-center p-4">
+        <div><i class="fas fa-comments text-muted mb-2" style="font-size: 2rem;"></i></div>
+        <p class="text-muted">No messages in this conversation yet.</p>
+        <p class="small text-muted">Send a reply to start the conversation.</p>
+    </div>
+    {% endif %}
+</div>
 </div>
 
-{# --- Reply Form --- #}
-{# Apply dashboard-card styling to the outer container #}
-<div class="dashboard-card reply-form-card mt-4">
+{# --- Enhanced Reply Form Section --- #}
+<div class="dashboard-card reply-form-card">
     <div class="card-header">
-        {# Use dashboard card header style #}
-        <h2><i class="fas fa-reply me-2"></i>Send Reply</h2>
+        <h2><i class="fas fa-reply"></i>Send Reply</h2>
     </div>
     <div class="card-body">
         {# Determine correct action URL based on user role viewing the page #}
         {% set reply_url = url_for('admin.reply_to_inquiry_admin', inquiry_id=inquiry.id) if current_user.is_admin else
         url_for('medic.reply_to_inquiry_medic', inquiry_id=inquiry.id) %}
+
+        {# Quick replies for common responses #}
+        <div class="quick-replies">
+            <button type="button" class="quick-reply-btn"
+                data-reply="Thank you for your inquiry. I'll review your case and get back to you shortly.">Quick
+                acknowledgment</button>
+            <button type="button" class="quick-reply-btn"
+                data-reply="Based on the symptoms you've described, I recommend scheduling an in-person appointment for a thorough examination.">Recommend
+                appointment</button>
+            <button type="button" class="quick-reply-btn"
+                data-reply="Could you please provide more details about your symptoms? This will help me give you a more accurate assessment.">Request
+                more info</button>
+        </div>
+
         <form action="{{ reply_url }}" method="POST">
-            {# Add CSRF token if using Flask-WTF: {{ form.csrf_token }} #}
             <div class="mb-3">
-                <label for="reply_body" class="form-label">Your Message:</label> {# Use Bootstrap form-label class #}
-                <textarea class="form-control" id="reply_body" name="reply_body" rows="4" required></textarea> {# Use
-                Bootstrap form-control class #}
+                <label for="reply_body" class="form-label">Your Message:</label>
+                <textarea class="form-control" id="reply_body" name="reply_body" rows="4"
+                    placeholder="Type your response here..." required></textarea>
             </div>
-            {# Use dashboard button style #}
             <button type="submit" class="btn-primary">
-                <i class="fas fa-paper-plane me-1"></i> Send Reply
+                <i class="fas fa-paper-plane"></i>Send Reply
             </button>
         </form>
     </div>
 </div>
+
+{# Quick-reply functionality JavaScript #}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Handle quick reply buttons
+        const quickReplyBtns = document.querySelectorAll('.quick-reply-btn');
+        const replyTextarea = document.getElementById('reply_body');
+
+        quickReplyBtns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                replyTextarea.value = this.dataset.reply;
+                replyTextarea.focus();
+            });
+        });
+
+        // Scroll to bottom functionality
+        const scrollToBottomBtn = document.getElementById('scroll-to-bottom');
+        const messageThread = document.getElementById('message-thread');
+
+        if (scrollToBottomBtn && messageThread) {
+            scrollToBottomBtn.addEventListener('click', function () {
+                messageThread.scrollTop = messageThread.scrollHeight;
+            });
+
+            // Auto-scroll to bottom on page load
+            messageThread.scrollTop = messageThread.scrollHeight;
+        }
+    });
+</script>
 {% endblock %}
